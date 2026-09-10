@@ -1,50 +1,14 @@
-<<<<<<< Updated upstream
-from ultralytics import YOLO
-model = YOLO("best.pt") 
-print("Model loaded successfully!")
-
-
-import numpy as np
-
-def extract_roi(image: np.ndarray, bbox: list, padding_percent: float = 0.05) -> np.ndarray:
-    """
-    Crops and validates the bus-numbers panel from an image frame.
-
-    :param image: Full frame numpy array (BGR)
-    :param bbox: Bounding box [x1, y1, x2, y2]
-    :param padding_percent: Margin expansion around the detected box
-    :return: Cropped numpy array or None
-    """
-    if image is None or image.size == 0:
-        return None
-
-    h, w, _ = image.shape
-    x1, y1, x2, y2 = map(int, bbox)
-
-    # 1. Add expansion margin padding
-    pad_w = int((x2 - x1) * padding_percent)
-    pad_h = int((y2 - y1) * padding_percent)
-
-    # 2. Boundary clamping
-=======
 import re
 import cv2
 import numpy as np
-
-# Import Torch & Ultralytics first to prevent DLL crashing
 import torch
+from paddleocr import PaddleOCR
 from ultralytics import YOLO
 
-# Import PaddleOCR
-from paddleocr import PaddleOCR
-
-# =========================
-# Load models
-# =========================
+# Initialize YOLO model
 model = YOLO("best.pt")
-print("Model loaded successfully!")
 
-# Disable extra document preprocessing stages (Doc Ori, UVDoc) to prevent engine overhead
+# Initialize PaddleOCR
 ocr = PaddleOCR(
     use_angle_cls=False,
     use_doc_orientation_classify=False,
@@ -52,14 +16,12 @@ ocr = PaddleOCR(
     enable_mkldnn=False,
     lang="en",
 )
-print("OCR model loaded")
+
+cap = cv2.VideoCapture(2, cv2.CAP_DSHOW)
 
 
-# =========================
-# ROI function
-# =========================
 def extract_roi(
-    image: np.ndarray, bbox: list, padding_percent: float = 0.05
+    image: np.ndarray, bbox: list, padding_percent: float = 0.02
 ) -> np.ndarray:
     if image is None or image.size == 0:
         return None
@@ -67,132 +29,39 @@ def extract_roi(
     x1, y1, x2, y2 = map(int, bbox)
     pad_w = int((x2 - x1) * padding_percent)
     pad_h = int((y2 - y1) * padding_percent)
->>>>>>> Stashed changes
-    x1_crop = max(0, x1 - pad_w)
-    y1_crop = max(0, y1 - pad_h)
-    x2_crop = min(w, x2 + pad_w)
-    y2_crop = min(h, y2 + pad_h)
-<<<<<<< Updated upstream
-
-    # 3. Perform image array crop
-    roi = image[y1_crop:y2_crop, x1_crop:x2_crop]
-
-    # 4. Dimension validation
-    if roi.size == 0 or roi.shape[0] == 0 or roi.shape[1] == 0:
-        return None
-
-    return roi
+    x1_crop, y1_crop = max(0, x1 - pad_w), max(0, y1 - pad_h)
+    x2_crop, y2_crop = min(w, x2 + pad_w), min(h, y2 + pad_h)
+    return image[y1_crop:y2_crop, x1_crop:x2_crop]
+print("roi detected")
 
 
-import cv2
+# Check if panel box is STRICTLY inside the bus box
+def is_inside(inner_box, outer_box, threshold=0.8):
+    ix1, iy1, ix2, iy2 = inner_box
+    ox1, oy1, ox2, oy2 = outer_box
 
-import os # we use [os] to read the images in the folder (test_images)
+    # Calculate intersection area
+    inter_x1 = max(ix1, ox1)
+    inter_y1 = max(iy1, oy1)
+    inter_x2 = min(ix2, ox2)
+    inter_y2 = min(iy2, oy2)
 
-image_folder = "test_images" # the folder that contains the images for testing
+    if inter_x2 <= inter_x1 or inter_y2 <= inter_y1:
+        return False
 
-image_files = [
-    file for file in os.listdir(image_folder)
-    if file.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))
-]
+    inter_area = (inter_x2 - inter_x1) * (inter_y2 - inter_y1)
+    inner_area = (ix2 - ix1) * (iy2 - iy1)
 
+    return (inter_area / float(inner_area)) >= threshold
+print("Panel is inside bus")
 
-for image_name in image_files: 
+route_number = None
 
-  image_path = os.path.join(image_folder, image_name) 
-  image = cv2.imread(image_path) 
-
-  roi = None 
-
-  if image is None:
-    print("Could not read image:", image_name)
-    continue
-
-
-  results = model(image)
-
-  for result in results:
-    bus_front = []
-    bus_numbers = []
-
-    for box in result.boxes:
-      class_id = int (box.cls[0])
-      confidence = float(box.conf[0])
-      x1, y1, x2, y2 = map(int, box.xyxy[0])
-
-      if class_id == 0:
-        bus_front.append((x1, y1, x2, y2))
-        print("Bus number detected!")
-
-      elif class_id == 1:
-        bus_numbers.append((x1, y1, x2, y2))
-
-    for bx1, by1, bx2, by2 in bus_front:
-      for px1, py1, px2, py2 in bus_numbers:
-
-        if(px1 >= bx1 and
-           py1 >= by1 and
-           px2 <= bx2 and
-           py2 <= by2):
-
-          bbox = (px1, py1, px2, py2)
-          roi = extract_roi(image, bbox)
-
-          if roi is not None: # لو ينحذف التحقق هذا عادي لاني اوريدي كتبته تحت بس خليته لانه يطبع الكوردنيتس للترتيب بس وقت الرن 
-            print("roi created successfully")
-
-          print("panel coordinates:", (px1, py1, px2, py2))
-
-
-  import matplotlib.pyplot as plt
-
-  if roi is not None:
-
-    plt.imshow(cv2.cvtColor(roi, cv2.COLOR_BGR2RGB))
-    plt.axis("off")
-    plt.show()
-
-  else:
-    print("No ROI found in this image.")
-    continue
-
-
-
-
-  from paddleocr import PaddleOCR
-  ocr = PaddleOCR(lang="en")
-  result = ocr.predict(roi)
-  print(result[0]["rec_texts"])
-
-
-
-# نهاية الـ Loop 
-print("All images finished.")
-=======
-    roi = image[y1_crop:y2_crop, x1_crop:x2_crop]
-    return roi if roi.size > 0 else None
-
-
-# =========================
-# Open phone camera
-# =========================
-cap = cv2.VideoCapture(2, cv2.CAP_DSHOW)
-
-if not cap.isOpened():
-    print("Camera could not be opened.")
-    exit()
-
-print("Camera opened successfully")
-ocr_text = None
-
-# =========================
-# Processing Loop
-# =========================
-while ocr_text is None:
+while route_number is None:
     ret, frame = cap.read()
     if not ret or frame is None:
         continue
 
-    # Run YOLO detection
     yolo_result = model(frame, verbose=False)[0]
     bus_front = []
     bus_numbers = []
@@ -200,25 +69,25 @@ while ocr_text is None:
     for box in yolo_result.boxes:
         class_id = int(box.cls[0])
         coords = tuple(map(int, box.xyxy[0]))
-
-        if class_id == 0:
+        if class_id == 0:  # Bus
             bus_front.append(coords)
-        elif class_id == 1:
+            print("bus front detected")
+        elif class_id == 1:  # Panel
             bus_numbers.append(coords)
+            print("bus panel detected")
 
-    # Find ROI (Prefer panel inside front box, fallback to panel directly)
     roi = None
-    for bx1, by1, bx2, by2 in bus_front:
-        for px1, py1, px2, py2 in bus_numbers:
-            if px1 >= bx1 and py1 >= by1 and px2 <= bx2 and py2 <= by2:
-                roi = extract_roi(frame, (px1, py1, px2, py2))
+
+    # ONLY accept panels that are physically inside a detected bus
+    for bus_box in bus_front:
+        for panel_box in bus_numbers:
+            if is_inside(panel_box, bus_box):
+                print("Panel is inside bus")
+                roi = extract_roi(frame, panel_box)
+                print("ROI extracted")
                 break
         if roi is not None:
             break
-
-    # Fallback: If no front box matched, crop direct panel
-    if roi is None and bus_numbers:
-        roi = extract_roi(frame, bus_numbers[0])
 
     if roi is None:
         cv2.imshow("Pipeline Feed", frame)
@@ -226,45 +95,37 @@ while ocr_text is None:
             break
         continue
 
-    # Execute OCR Inference safely
+    # Execute OCR
     try:
         results = ocr.predict(roi)
+        extracted_numbers = []
+        print("OCR executed")
 
         if results:
-            extracted_texts = []
             for res in results:
-                # PaddleOCR v3 output parsing
                 if isinstance(res, dict):
                     rec_texts = res.get("rec_texts", [])
                     rec_scores = res.get("rec_scores", [])
                     for text, score in zip(rec_texts, rec_scores):
-                        clean_text = re.sub(r"[^a-zA-Z0-9\s]", "", text).strip()
-                        if clean_text and score > 0.35:
-                            extracted_texts.append(clean_text)
+                        # Extract STRICTLY numerical digits (0-9)
+                        digits_only = re.sub(r"[^\d]", "", text).strip()
 
-                # Legacy output parsing fallback
-                elif isinstance(res, list):
-                    for line in res:
+                        # Validate digit sequence length (1 to 4 digits long)
                         if (
-                            isinstance(line, list)
-                            and len(line) >= 2
-                            and isinstance(line[1], (list, tuple))
+                            digits_only
+                            and score > 0.35
+                            and 1 <= len(digits_only) <= 4
                         ):
-                            text, score = line[1][0], line[1][1]
-                            clean_text = re.sub(
-                                r"[^a-zA-Z0-9\s]", "", text
-                            ).strip()
-                            if clean_text and score > 0.35:
-                                extracted_texts.append(clean_text)
+                            extracted_numbers.append(digits_only)
 
-            if extracted_texts:
-                ocr_text = extracted_texts
-                print("SUCCESS -> Recognized Route Number:", ocr_text)
+        if extracted_numbers:
+            route_number = extracted_numbers[0]  # Grab primary number match
+            print(f"SUCCESS -> Recognized Route Number: {route_number}")
 
-                cv2.imshow("Detected ROI", roi)
-                cv2.imshow("Captured Frame", frame)
-                cv2.waitKey(0)
-                break
+            cv2.imshow("Detected ROI", roi)
+            cv2.imshow("Captured Frame", frame)
+            cv2.waitKey(0)
+            break
     except Exception as e:
         print(f"Error during OCR execution: {e}")
 
@@ -274,5 +135,3 @@ while ocr_text is None:
 
 cap.release()
 cv2.destroyAllWindows()
-print("Finished.")
->>>>>>> Stashed changes
