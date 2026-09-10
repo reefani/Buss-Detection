@@ -47,6 +47,7 @@ ocr_text = None
 # ========================= 
 while ocr_text is None: 
    ret, frame = cap.read() 
+   print("ret =", ret)
    if not ret: 
        print("Could not read frame.") 
        continue 
