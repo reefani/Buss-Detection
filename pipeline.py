@@ -1,150 +1,137 @@
-from ultralytics import YOLO
-from paddleocr import PaddleOCR
-import numpy as np
+import re
 import cv2
+import numpy as np
+import torch
+from paddleocr import PaddleOCR
+from ultralytics import YOLO
 
-
-# Load models
+# Initialize YOLO model
 model = YOLO("best.pt")
-print("Model loaded successfully!")
-ocr = PaddleOCR(lang="en")
+
+# Initialize PaddleOCR
+ocr = PaddleOCR(
+    use_angle_cls=False,
+    use_doc_orientation_classify=False,
+    use_doc_unwarping=False,
+    enable_mkldnn=False,
+    lang="en",
+)
+
+cap = cv2.VideoCapture(2, cv2.CAP_DSHOW)
 
 
-# ROI function
-def extract_roi(image: np.ndarray, bbox: list, padding_percent: float = 0.05) -> np.ndarray:
-   if image is None or image.size == 0:
-       return None
-   h, w, _ = image.shape
-   x1, y1, x2, y2 = map(int, bbox)
-   pad_w = int((x2 - x1) * padding_percent)
-   pad_h = int((y2 - y1) * padding_percent)
-   x1_crop = max(0, x1 - pad_w)
-   y1_crop = max(0, y1 - pad_h)
-   x2_crop = min(w, x2 + pad_w)
-   y2_crop = min(h, y2 + pad_h)
-   roi = image[y1_crop:y2_crop, x1_crop:x2_crop]
-   if roi.size == 0:
-       return None
-   return roi
+def extract_roi(
+    image: np.ndarray, bbox: list, padding_percent: float = 0.02
+) -> np.ndarray:
+    if image is None or image.size == 0:
+        return None
+    h, w, _ = image.shape
+    x1, y1, x2, y2 = map(int, bbox)
+    pad_w = int((x2 - x1) * padding_percent)
+    pad_h = int((y2 - y1) * padding_percent)
+    x1_crop, y1_crop = max(0, x1 - pad_w), max(0, y1 - pad_h)
+    x2_crop, y2_crop = min(w, x2 + pad_w), min(h, y2 + pad_h)
+    return image[y1_crop:y2_crop, x1_crop:x2_crop]
+print("roi detected")
 
 
-# Open phone camera
-cap = cv2.VideoCapture(0)
+# Check if panel box is STRICTLY inside the bus box
+def is_inside(inner_box, outer_box, threshold=0.8):
+    ix1, iy1, ix2, iy2 = inner_box
+    ox1, oy1, ox2, oy2 = outer_box
 
-if not cap.isOpened():
-   print("Camera could not be opened.")
-   exit()
+    # Calculate intersection area
+    inter_x1 = max(ix1, ox1)
+    inter_y1 = max(iy1, oy1)
+    inter_x2 = min(ix2, ox2)
+    inter_y2 = min(iy2, oy2)
 
-ocr_text = None
+    if inter_x2 <= inter_x1 or inter_y2 <= inter_y1:
+        return False
 
-# Keep taking frames until OCR succeeds
-while ocr_text is None:
-   ret, frame = cap.read()
+    inter_area = (inter_x2 - inter_x1) * (inter_y2 - inter_y1)
+    inner_area = (ix2 - ix1) * (iy2 - iy1)
 
-   if not ret:
-       print("Could not read frame.")
-       continue
+    return (inter_area / float(inner_area)) >= threshold
+print("Panel is inside bus")
 
-   print("Frame received successfully")
+route_number = None
 
-   
-   # YOLO on current frame
-   yolo_result = model(frame, verbose=False)[0]
+while route_number is None:
+    ret, frame = cap.read()
+    if not ret or frame is None:
+        continue
 
-   print("Frame entered YOLO")
-   print("YOLO detections:", len(yolo_result.boxes))
+    yolo_result = model(frame, verbose=False)[0]
+    bus_front = []
+    bus_numbers = []
 
-   bus_front = []
-   bus_numbers = []
+    for box in yolo_result.boxes:
+        class_id = int(box.cls[0])
+        coords = tuple(map(int, box.xyxy[0]))
+        if class_id == 0:  # Bus
+            bus_front.append(coords)
+            print("bus front detected")
+        elif class_id == 1:  # Panel
+            bus_numbers.append(coords)
+            print("bus panel detected")
 
-   for box in yolo_result.boxes:
-       class_id = int(box.cls[0])
+    roi = None
 
-       print("Detected class:", class_id)
+    # ONLY accept panels that are physically inside a detected bus
+    for bus_box in bus_front:
+        for panel_box in bus_numbers:
+            if is_inside(panel_box, bus_box):
+                print("Panel is inside bus")
+                roi = extract_roi(frame, panel_box)
+                print("ROI extracted")
+                break
+        if roi is not None:
+            break
 
-       x1, y1, x2, y2 = map(
-           int,
-           box.xyxy[0]
-       )
+    if roi is None:
+        cv2.imshow("Pipeline Feed", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+        continue
 
-       if class_id == 0:
-           bus_front.append(
-               (x1, y1, x2, y2)
-           )
-           print("Bus front detected")
+    # Execute OCR
+    try:
+        results = ocr.predict(roi)
+        extracted_numbers = []
+        print("OCR executed")
 
-       elif class_id == 1:
-           bus_numbers.append(
-               (x1, y1, x2, y2)
-           )
-           print("Bus number panel detected")
+        if results:
+            for res in results:
+                if isinstance(res, dict):
+                    rec_texts = res.get("rec_texts", [])
+                    rec_scores = res.get("rec_scores", [])
+                    for text, score in zip(rec_texts, rec_scores):
+                        # Extract STRICTLY numerical digits (0-9)
+                        digits_only = re.sub(r"[^\d]", "", text).strip()
 
+                        # Validate digit sequence length (1 to 4 digits long)
+                        if (
+                            digits_only
+                            and score > 0.35
+                            and 1 <= len(digits_only) <= 4
+                        ):
+                            extracted_numbers.append(digits_only)
 
-   # Find bus number panel
-   # inside bus front
-   roi = None
+        if extracted_numbers:
+            route_number = extracted_numbers[0]  # Grab primary number match
+            print(f"SUCCESS -> Recognized Route Number: {route_number}")
 
-   for bx1, by1, bx2, by2 in bus_front:
-       for px1, py1, px2, py2 in bus_numbers:
-           if (
-               px1 >= bx1
-               and py1 >= by1
-               and px2 <= bx2
-               and py2 <= by2
-           ):
-               bbox = (
-                   px1,
-                   py1,
-                   px2,
-                   py2
-               )
-               print("Panel in bus")
-               
-               roi = extract_roi(
-                   frame,
-                   bbox
-               )
+            cv2.imshow("Detected ROI", roi)
+            cv2.imshow("Captured Frame", frame)
+            cv2.waitKey(0)
+            break
+    except Exception as e:
+        print(f"Error during OCR execution: {e}")
 
-               print("ROI created successfully")
+    cv2.imshow("Pipeline Feed", frame)
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
 
-               break
-
-       if roi is not None:
-           break
-
-   
-   # If no panel detected,
-   # get another camera frame
-   if roi is None:
-       print("No ROI found")
-       continue
-
-
-   # OCR
-   print("ROI entered OCR")
-
-   ocr_result = ocr.predict(roi)
-
-   if not ocr_result:
-       print("OCR returned no result")
-       continue
-
-   texts = ocr_result[0]["rec_texts"]
-
-   # إذا OCR ما قرأ شيء
-   # يرجع لأول الـwhile
-   # ويأخذ frame جديد
-   if not texts:
-       print("OCR found no text")
-       continue
-
-
-   # OCR succeeded
-   ocr_text = texts
-   print("OCR:", ocr_text)
-   
-
-# Close camera
 cap.release()
 cv2.destroyAllWindows()
-print("Finished.")
