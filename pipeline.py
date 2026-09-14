@@ -4,7 +4,26 @@ import numpy as np
 import torch
 from paddleocr import PaddleOCR
 from ultralytics import YOLO
+import threading
+import pyttsx3
 
+# --- TTS HELPER FUNCTION ---
+def speak_route_number(text: str):
+    """Executes TTS in a background thread to prevent freezing the OpenCV camera loop."""
+
+    def _speak():
+        try:
+            # Re-initialize engine instance inside the worker thread for thread safety
+            engine = pyttsx3.init()
+            engine.setProperty("rate", 150)  # Speech speed rate
+            engine.say(f"Approaching bus route number {text}")
+            engine.runAndWait()
+        except Exception as e:
+            print(f"TTS Error: {e}")
+
+    # Launch audio playback asynchronously
+    threading.Thread(target=_speak, daemon=True).start()
+    
 # Initialize YOLO model
 model = YOLO("best.pt")
 
@@ -17,7 +36,7 @@ ocr = PaddleOCR(
     lang="en",
 )
 
-cap = cv2.VideoCapture(2, cv2.CAP_DSHOW)
+cap = cv2.VideoCapture(0)
 
 
 def extract_roi(
@@ -121,6 +140,9 @@ while route_number is None:
         if extracted_numbers:
             route_number = extracted_numbers[0]  # Grab primary number match
             print(f"SUCCESS -> Recognized Route Number: {route_number}")
+
+# --- TTS ANNOUNCEMENT TRIGGER ---
+            speak_route_number(route_number)
 
             cv2.imshow("Detected ROI", roi)
             cv2.imshow("Captured Frame", frame)
