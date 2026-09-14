@@ -17,7 +17,7 @@ ocr = PaddleOCR(
     lang="en",
 )
 
-cap = cv2.VideoCapture(2, cv2.CAP_DSHOW)
+cap = cv2.VideoCapture(0)
 
 
 def extract_roi(
