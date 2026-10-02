@@ -6,6 +6,7 @@ from paddleocr import PaddleOCR
 from ultralytics import YOLO
 import threading
 import pyttsx3
+from pathlib import Path
 
 # --- TTS HELPER FUNCTION ---
 def speak_route_number(text: str):
@@ -25,7 +26,8 @@ def speak_route_number(text: str):
     threading.Thread(target=_speak, daemon=True).start()
     
 # Initialize YOLO model
-model = YOLO("best.pt")
+BASE_DIR = Path(__file__).resolve().parent
+model = YOLO(BASE_DIR / "best.pt")
 
 # Initialize PaddleOCR
 ocr = PaddleOCR(
