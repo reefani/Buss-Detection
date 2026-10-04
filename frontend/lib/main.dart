@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/detection_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // <--- Required before camera initialization
   runApp(const MyApp());
 }
 
