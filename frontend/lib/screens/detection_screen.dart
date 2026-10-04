@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'dart:typed_data';
+import '../services/detection_api_service.dart';
 import 'package:camera/camera.dart';
 
 class DetectionScreen extends StatefulWidget {
@@ -15,6 +16,10 @@ class DetectionScreen extends StatefulWidget {
 class _DetectionScreenState extends State<DetectionScreen> {
 
   CameraController? _cameraController;
+  final DetectionApiService _apiService = DetectionApiService();
+  bool _isServerBusy = false;
+  DateTime _lastFrameTime = DateTime.now();
+  String lastDetectedRoute = '';
 
   String busMessage = 'بانتظار قراءة رقم الباص...';
 
@@ -57,6 +62,65 @@ class _DetectionScreenState extends State<DetectionScreen> {
       _cameraController = controller;
 
       await controller.initialize();
+      Future<void> _initializeCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+
+      final camera = cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+
+      final controller = CameraController(
+        camera,
+        ResolutionPreset.medium, // Medium resolution keeps payloads lightweight and fast
+        enableAudio: false,
+      );
+
+      _cameraController = controller;
+      await controller.initialize();
+
+      if (mounted) {
+        setState(() {});
+        _startLiveStream(); // <--- START STREAMING HERE
+      }
+    } catch (e) {
+      debugPrint('Camera error: $e');
+    }
+  }
+
+  void _startLiveStream() {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+
+    _cameraController!.startImageStream((CameraImage frame) async {
+      final now = DateTime.now();
+
+      // 300ms Throttle: Avoids overwhelming network/backend while keeping up with moving buses
+      if (_isServerBusy || now.difference(_lastFrameTime).inMilliseconds < 300) {
+        return;
+      }
+
+      _isServerBusy = true;
+      _lastFrameTime = now;
+
+      try {
+        final Uint8List frameBytes = frame.planes[0].bytes;
+        final result = await _apiService.processFrameBytes(frameBytes);
+
+        if (result != null && result.detected && mounted) {
+          setState(() {
+            lastDetectedRoute = result.routeNumber;
+            busMessage = 'حافلة رقم: ${result.routeNumber}';
+          });
+        }
+      } catch (e) {
+        debugPrint('Stream frame error: $e');
+      } finally {
+        _isServerBusy = false;
+      }
+    });
+  }
 
       if (mounted) {
 
@@ -73,12 +137,11 @@ class _DetectionScreenState extends State<DetectionScreen> {
   }
 
   @override
-
   void dispose() {
-
+    _cameraController?.stopImageStream();
     _cameraController?.dispose();
-
     super.dispose();
+  }
 
   }
 
