@@ -88,3 +88,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  assets: #اضفتها عشان يتعرف على صور ملف الاستس الجديد الي اضفته عشان الصوره الي بثبتها لخلفية الواجهه الرئيسيه 
+    - assets/ #اضفتها عشان يتعرف على صور ملف الاستس الجديد الي اضفته عشان الصوره الي بثبتها لخلفية الواجهه الرئيسيه 
