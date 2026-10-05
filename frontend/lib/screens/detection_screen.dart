@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 import '../services/detection_api_service.dart';
+import '../services/frame_encoder.dart';
 import '../services/tts_service.dart';
 
 class DetectionScreen extends StatefulWidget {
@@ -16,11 +17,12 @@ class DetectionScreen extends StatefulWidget {
 class _DetectionScreenState extends State<DetectionScreen> {
   CameraController? _cameraController;
   final DetectionApiService _apiService = DetectionApiService();
+  final TtsService _ttsService = TtsService();
+  final FrameEncoder _frameEncoder = FrameEncoder();
+
   bool _isServerBusy = false;
   DateTime _lastFrameTime = DateTime.now();
   String lastDetectedRoute = '';
-
-  final TtsService _ttsService = TtsService();
 
   String busMessage = 'بانتظار قراءة رقم الباص...';
 
@@ -82,7 +84,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
       _lastFrameTime = now;
 
       try {
-        final Uint8List frameBytes = frame.planes[0].bytes;
+        final Uint8List frameBytes = await _frameEncoder.encodeToJpeg(frame);
         final result = await _apiService.processFrameBytes(frameBytes);
 
         if (result != null && result.detected && mounted) {
@@ -90,6 +92,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
             lastDetectedRoute = result.routeNumber;
             busMessage = 'حافلة رقم: ${result.routeNumber}';
           });
+           await _ttsService.speakRouteNumber(result.routeNumber);
         }
       } catch (e) {
         debugPrint('Stream frame error: $e');

@@ -10,15 +10,22 @@ class TtsService {
   }
 
   Future<void> speakRouteNumber(String routeNumber) async {
+    if (routeNumber.isEmpty || routeNumber == _lastRouteNumber) {
+      return;
+    }
+
     _lastRouteNumber = routeNumber;
+
     await _flutterTts.stop();
     await _flutterTts.speak('الباص رقم $routeNumber');
   }
 
   Future<void> replayLastRoute() async {
     final routeNumber = _lastRouteNumber;
+
     if (routeNumber != null) {
-      await speakRouteNumber(routeNumber);
+      await _flutterTts.stop();
+      await _flutterTts.speak('الباص رقم $routeNumber');
     }
   }
 
