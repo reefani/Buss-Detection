@@ -1,8 +1,8 @@
-
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
+
 import '../services/detection_api_service.dart';
 import '../services/tts_service.dart';
 
@@ -47,6 +47,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
         ResolutionPreset
             .medium, // Medium resolution keeps payloads lightweight and fast
         enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
       );
 
       _cameraController = controller;
@@ -66,6 +67,9 @@ class _DetectionScreenState extends State<DetectionScreen> {
       return;
 
     _cameraController!.startImageStream((CameraImage frame) async {
+      debugPrint('Camera frame format: ${frame.format.group}');
+      debugPrint('Number of planes: ${frame.planes.length}');
+
       final now = DateTime.now();
 
       // 300ms Throttle: Avoids overwhelming network/backend while keeping up with moving buses
@@ -97,8 +101,13 @@ class _DetectionScreenState extends State<DetectionScreen> {
 
   @override
   void dispose() {
-    _cameraController?.stopImageStream();
-    _cameraController?.dispose();
+    final controller = _cameraController;
+
+    if (controller != null && controller.value.isStreamingImages) {
+      controller.stopImageStream();
+    }
+
+    controller?.dispose();
     super.dispose();
   }
 
