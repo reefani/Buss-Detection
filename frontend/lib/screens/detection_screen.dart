@@ -1,3 +1,5 @@
+
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
@@ -42,7 +44,8 @@ class _DetectionScreenState extends State<DetectionScreen> {
 
       final controller = CameraController(
         camera,
-        ResolutionPreset.medium, // Medium resolution keeps payloads lightweight and fast
+        ResolutionPreset
+            .medium, // Medium resolution keeps payloads lightweight and fast
         enableAudio: false,
       );
 
@@ -57,15 +60,17 @@ class _DetectionScreenState extends State<DetectionScreen> {
       debugPrint('Camera error: $e');
     }
   }
+
   void _startLiveStream() {
-    
-    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+    if (_cameraController == null || !_cameraController!.value.isInitialized)
+      return;
 
     _cameraController!.startImageStream((CameraImage frame) async {
       final now = DateTime.now();
 
       // 300ms Throttle: Avoids overwhelming network/backend while keeping up with moving buses
-      if (_isServerBusy || now.difference(_lastFrameTime).inMilliseconds < 300) {
+      if (_isServerBusy ||
+          now.difference(_lastFrameTime).inMilliseconds < 300) {
         return;
       }
 
@@ -88,7 +93,6 @@ class _DetectionScreenState extends State<DetectionScreen> {
         _isServerBusy = false;
       }
     });
-    
   }
 
   @override
