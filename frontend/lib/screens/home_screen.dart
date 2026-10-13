@@ -6,16 +6,50 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        // Temporary button for testing navigation.
-        // The UI design will be added by the Design Team.
-        child: ElevatedButton(
-          onPressed: () {
-            // Navigate from Home Screen to Detection Screen.
-            Navigator.pushNamed(context, '/detection');
-          },
-          child: const Text('Start Detection'),
-        ),
+      body: Stack(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: Image.asset('assets/HSBackground.jpeg', fit: BoxFit.cover),
+          ),
+
+          Transform.translate(
+            offset: const Offset(0, 160),
+            child: Center(
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color.fromARGB(255, 149, 148, 148),
+                      blurRadius: 25,
+                      spreadRadius: 8,
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/detection');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: const CircleBorder(),
+                    backgroundColor: const Color.fromARGB(255, 85, 132, 87),
+                  ),
+                  child: const Text(
+                    'ابدأ',
+                    style: TextStyle(
+                      fontSize: 100,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
