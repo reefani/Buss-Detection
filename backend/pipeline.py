@@ -4,26 +4,10 @@ import numpy as np
 import torch
 from paddleocr import PaddleOCR
 from ultralytics import YOLO
-import threading
-import pyttsx3
+
 from pathlib import Path
 
-# --- TTS HELPER FUNCTION ---
-def speak_route_number(text: str):
-    """Executes TTS in a background thread to prevent freezing the OpenCV camera loop."""
 
-    def _speak():
-        try:
-            # Re-initialize engine instance inside the worker thread for thread safety
-            engine = pyttsx3.init()
-            engine.setProperty("rate", 150)  # Speech speed rate
-            engine.say(f"Approaching bus route number {text}")
-            engine.runAndWait()
-        except Exception as e:
-            print(f"TTS Error: {e}")
-
-    # Launch audio playback asynchronously
-    threading.Thread(target=_speak, daemon=True).start()
     
 # Initialize YOLO model
 BASE_DIR = Path(__file__).resolve().parent
@@ -38,7 +22,7 @@ ocr = PaddleOCR(
     lang="en",
 )
 
-cap = cv2.VideoCapture(0)
+
 
 
 def extract_roi(
@@ -76,12 +60,9 @@ def is_inside(inner_box, outer_box, threshold=0.8):
     return (inter_area / float(inner_area)) >= threshold
 print("Panel is inside bus")
 
-route_number = None
-
-while route_number is None:
-    ret, frame = cap.read()
-    if not ret or frame is None:
-        continue
+def process_frame(frame):
+    if frame is None or frame.size == 0:
+        return None
 
     yolo_result = model(frame, verbose=False)[0]
     bus_front = []
@@ -111,10 +92,7 @@ while route_number is None:
             break
 
     if roi is None:
-        cv2.imshow("Pipeline Feed", frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-        continue
+        return None
 
     # Execute OCR
     try:
@@ -143,19 +121,10 @@ while route_number is None:
             route_number = extracted_numbers[0]  # Grab primary number match
             print(f"SUCCESS -> Recognized Route Number: {route_number}")
 
-# --- TTS ANNOUNCEMENT TRIGGER ---
-            speak_route_number(route_number)
+            return route_number
 
-            cv2.imshow("Detected ROI", roi)
-            cv2.imshow("Captured Frame", frame)
-            cv2.waitKey(0)
-            break
+        return None
+
     except Exception as e:
         print(f"Error during OCR execution: {e}")
-
-    cv2.imshow("Pipeline Feed", frame)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
+        return None
