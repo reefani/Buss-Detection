@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class TtsService {
@@ -15,6 +16,13 @@ class TtsService {
     }
 
     _lastRouteNumber = routeNumber;
+
+    // Share the announcement guard; unavailable haptics must not interrupt TTS.
+    try {
+      await HapticFeedback.vibrate();
+    } catch (_) {
+      // Continue with speech when vibration is unavailable.
+    }
 
     await _flutterTts.stop();
     await _flutterTts.speak('الباص رقم $routeNumber');

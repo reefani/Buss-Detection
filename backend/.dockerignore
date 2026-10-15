@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+debug_captures/
+test_images/
+best_old.pt
+.venv/
+.env
+.git/
