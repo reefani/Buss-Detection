@@ -69,8 +69,8 @@ class _DetectionScreenState extends State<DetectionScreen> {
       return;
 
     _cameraController!.startImageStream((CameraImage frame) async {
-      debugPrint('Camera frame format: ${frame.format.group}');
-      debugPrint('Number of planes: ${frame.planes.length}');
+      //debugPrint('Camera frame format: ${frame.format.group}');
+      //debugPrint('Number of planes: ${frame.planes.length}');
 
       final now = DateTime.now();
 
@@ -92,7 +92,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
             lastDetectedRoute = result.routeNumber;
             busMessage = 'حافلة رقم: ${result.routeNumber}';
           });
-           await _ttsService.speakRouteNumber(result.routeNumber);
+          await _ttsService.speakRouteNumber(result.routeNumber);
         }
       } catch (e) {
         debugPrint('Stream frame error: $e');

@@ -26,7 +26,9 @@ class DetectionResult {
 class DetectionApiService {
   final String baseUrl;
 
-  DetectionApiService({this.baseUrl = 'http://192.168.1.115:8000'});
+  DetectionApiService({
+    this.baseUrl = 'https://buss-detection-api.lemondune-fdb5e830.polandcentral.azurecontainerapps.io',
+  });
 
   Future<DetectionResult?> processFrameBytes(Uint8List imageBytes) async {
     try {
@@ -43,7 +45,7 @@ class DetectionApiService {
       );
 
       final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 3),
+        const Duration(seconds: 30),
       );
 
       final response = await http.Response.fromStream(streamedResponse);
