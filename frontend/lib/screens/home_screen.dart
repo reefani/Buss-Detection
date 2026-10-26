@@ -11,22 +11,35 @@ class HomeScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: double.infinity,
-            child: Image.asset('assets/HSBackground.jpeg', fit: BoxFit.cover),
+            child: const ColoredBox(color: Color(0xFF999999)),
           ),
 
           Transform.translate(
-            offset: const Offset(0, 160),
+            offset: const Offset(0, 0),
             child: Center(
               child: Container(
-                width: 300,
-                height: 300,
+                width: MediaQuery.of(context).size.width * 0.80,
+                height: MediaQuery.of(context).size.width * 0.704,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.all(
+                    Radius.elliptical(
+                      MediaQuery.of(context).size.width * 0.40,
+                      MediaQuery.of(context).size.width * 0.352,
+                    ),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color.fromARGB(255, 149, 148, 148),
-                      blurRadius: 25,
-                      spreadRadius: 8,
+                      color: const Color(0x99000000),
+                      blurRadius: 30,
+                      spreadRadius: 7,
+                      offset: Offset.zero,
+                    ),
+
+                    BoxShadow(
+                      color: const Color(0x80000000),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
@@ -35,14 +48,21 @@ class HomeScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/detection');
                   },
                   style: ElevatedButton.styleFrom(
-                    shape: const CircleBorder(),
-                    backgroundColor: const Color.fromARGB(255, 85, 132, 87),
+                    shape: const CircleBorder(
+                      eccentricity: 1,
+                      side: BorderSide(color: Colors.black, width: 2.5),
+                    ),
+                    backgroundColor: const Color(0xFF00B001),
+                    foregroundColor: Colors.black,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
                   ),
-                  child: const Text(
+                  child: Text(
                     'ابدأ',
                     style: TextStyle(
-                      fontSize: 100,
-                      fontWeight: FontWeight.bold,
+                      fontSize: MediaQuery.of(context).size.width * 0.272,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
