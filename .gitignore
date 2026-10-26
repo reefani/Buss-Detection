@@ -11,3 +11,20 @@ frontend/ios/Flutter/ephemeral/
 frontend/macos/Flutter/ephemeral/
 frontend/windows/flutter/ephemeral/
 frontend/linux/flutter/ephemeral/
+
+# Python cache
+__pycache__/
+*.pyc
+.venv-1/
+
+# Backend debugging and testing
+backend/debug_captures/
+backend/test_images/
+backend/best_old.pt
+
+# Local configuration and secrets
+.env
+.env.*
+.idea/
+Thumbs.db
+.DS_Store
