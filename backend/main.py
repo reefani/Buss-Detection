@@ -22,7 +22,8 @@ async def detect_bus(image: UploadFile = File(...)):
             return {
                 "detected": False,
                 "route_number": "",
-                "confidence": 0.0
+                "confidence": 0.0,
+                "bus_in_guidance_zone": False,
             }
 
         print(
@@ -30,19 +31,21 @@ async def detect_bus(image: UploadFile = File(...)):
         )
 
         # Run the real YOLO + OCR pipeline
-        route_number = process_frame(frame)
+        result = process_frame(frame)
 
-        if route_number is not None:
+        if result.route_number is not None:
             return {
                 "detected": True,
-                "route_number": route_number,
-                "confidence": 0.0
+                "route_number": result.route_number,
+                "confidence": 0.0,
+                "bus_in_guidance_zone": result.bus_in_guidance_zone,
             }
 
         return {
             "detected": False,
             "route_number": "",
-            "confidence": 0.0
+            "confidence": 0.0,
+            "bus_in_guidance_zone": result.bus_in_guidance_zone,
         }
 
     except Exception as e:
@@ -51,5 +54,6 @@ async def detect_bus(image: UploadFile = File(...)):
         return {
             "detected": False,
             "route_number": "",
-            "confidence": 0.0
+            "confidence": 0.0,
+            "bus_in_guidance_zone": False,
         }

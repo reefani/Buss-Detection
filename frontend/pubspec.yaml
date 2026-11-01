@@ -38,10 +38,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   camera: ^0.12.1
   flutter_tts: ^4.2.5
+  vibration: ^3.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  camera_platform_interface: ^2.14.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -91,5 +93,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-  assets: #اضفتها عشان يتعرف على صور ملف الاستس الجديد الي اضفته عشان الصوره الي بثبتها لخلفية الواجهه الرئيسيه 
-    - assets/ #اضفتها عشان يتعرف على صور ملف الاستس الجديد الي اضفته عشان الصوره الي بثبتها لخلفية الواجهه الرئيسيه 
+  assets: #اضفتها عشان يتعرف على صور ملف الاستس الجديد الي اضفته عشان الصوره الي بثبتها لخلفية الواجهه الرئيسيه
+    - assets/ #اضفتها عشان يتعرف على صور ملف الاستس الجديد الي اضفته عشان الصوره الي بثبتها لخلفية الواجهه الرئيسيه

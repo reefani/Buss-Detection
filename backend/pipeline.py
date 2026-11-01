@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 import cv2
 import numpy as np
 import torch
@@ -18,6 +19,17 @@ if DEBUG_SAVE:
 
 capture_id = 0
 model = YOLO(BASE_DIR / "best.pt")
+
+# Fractions of the frame covered by the centered camera guidance zone.
+# Tune the two dimensions independently without changing detection settings.
+GUIDANCE_ZONE_WIDTH_FRACTION = 0.60
+GUIDANCE_ZONE_HEIGHT_FRACTION = 0.60
+
+
+@dataclass(frozen=True)
+class FrameDetectionResult:
+    route_number: str | None = None
+    bus_in_guidance_zone: bool = False
 
 # Initialize PaddleOCR
 ocr = PaddleOCR(
@@ -66,10 +78,36 @@ def is_inside(inner_box, outer_box, threshold=0.8):
     return (inter_area / float(inner_area)) >= threshold
 print("Panel is inside bus")
 
-def process_frame(frame):
+def bus_center_in_guidance_zone(
+    bus_box,
+    frame_shape,
+    width_fraction=GUIDANCE_ZONE_WIDTH_FRACTION,
+    height_fraction=GUIDANCE_ZONE_HEIGHT_FRACTION,
+):
+    """Check the bus center against the centered zone, including its edges."""
+    if not 0 < width_fraction <= 1 or not 0 < height_fraction <= 1:
+        raise ValueError("Guidance zone fractions must be greater than 0 and at most 1")
+
+    height, width = frame_shape[:2]
+    x1, y1, x2, y2 = bus_box
+    center_x = (x1 + x2) / 2
+    center_y = (y1 + y2) / 2
+    margin_x = width * (1 - width_fraction) / 2
+    margin_y = height * (1 - height_fraction) / 2
+    return (
+        margin_x <= center_x <= width - margin_x
+        and margin_y <= center_y <= height - margin_y
+    )
+
+
+def process_frame(
+    frame,
+    guidance_zone_width=GUIDANCE_ZONE_WIDTH_FRACTION,
+    guidance_zone_height=GUIDANCE_ZONE_HEIGHT_FRACTION,
+):
     global capture_id
     if frame is None or frame.size == 0:
-        return None
+        return FrameDetectionResult()
     
 
     yolo_result = model(frame, verbose=False)[0]
@@ -85,6 +123,16 @@ def process_frame(frame):
         elif class_id == 1:  # Panel
             bus_numbers.append(coords)
             print("bus panel detected")
+
+    bus_in_guidance_zone = any(
+        bus_center_in_guidance_zone(
+            bus_box, frame.shape, guidance_zone_width, guidance_zone_height
+        )
+        for bus_box in bus_front
+    )
+    guidance_result = FrameDetectionResult(
+        bus_in_guidance_zone=bus_in_guidance_zone
+    )
 
     roi = None
 
@@ -104,7 +152,7 @@ def process_frame(frame):
             break
 
     if roi is None:
-        return None
+        return guidance_result
 
     # Execute OCR
     try:
@@ -143,10 +191,13 @@ def process_frame(frame):
                     f"Recognized Route: {route_number}\n",
                     encoding="utf-8",
                 )
-            return route_number
+            return FrameDetectionResult(
+                route_number=route_number,
+                bus_in_guidance_zone=bus_in_guidance_zone,
+            )
 
-        return None
+        return guidance_result
 
     except Exception as e:
         print(f"Error during OCR execution: {e}")
-        return None
+        return guidance_result

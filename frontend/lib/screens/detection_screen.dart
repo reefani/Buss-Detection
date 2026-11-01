@@ -1,27 +1,50 @@
-import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 import '../services/detection_api_service.dart';
 import '../services/frame_encoder.dart';
+import '../services/haptic_guidance_service.dart';
 import '../services/tts_service.dart';
 
 class DetectionScreen extends StatefulWidget {
-  const DetectionScreen({super.key});
+  const DetectionScreen({
+    super.key,
+    this.apiService,
+    this.ttsService,
+    this.hapticGuidanceService,
+    this.now,
+  });
+
+  final DetectionApiService? apiService;
+  final TtsService? ttsService;
+  final HapticGuidanceService? hapticGuidanceService;
+  final DateTime Function()? now;
 
   @override
   State<DetectionScreen> createState() => _DetectionScreenState();
 }
 
-class _DetectionScreenState extends State<DetectionScreen> {
+class _DetectionScreenState extends State<DetectionScreen>
+    with WidgetsBindingObserver {
   CameraController? _cameraController;
-  final DetectionApiService _apiService = DetectionApiService();
-  final TtsService _ttsService = TtsService();
+  late final DetectionApiService _apiService;
+  late final TtsService _ttsService;
+  late final HapticGuidanceService _haptics;
+  late final Future<void> _ttsReady;
+  late final int _sessionId;
+  late final DateTime Function() _now;
   final FrameEncoder _frameEncoder = FrameEncoder();
 
-  bool _isServerBusy = false;
-  DateTime _lastFrameTime = DateTime.now();
+  Future<void> _cameraWork = Future<void>.value();
+  int _streamGeneration = 0;
+  int? _busyGeneration;
+  int _speechGeneration = 0;
+  bool _foreground = true;
+  bool _stopped = false;
+  bool _isAnnouncing = false;
+  DateTime? _lastFrameTime;
   String lastDetectedRoute = '';
 
   String busMessage = 'بانتظار قراءة رقم الباص...';
@@ -29,88 +52,226 @@ class _DetectionScreenState extends State<DetectionScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
-
-    _ttsService.initialize();
-  }
-
-  Future<void> _initializeCamera() async {
-    try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) return;
-
-      final camera = cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.back,
-        orElse: () => cameras.first,
-      );
-
-      final controller = CameraController(
-        camera,
-        ResolutionPreset
-            .medium, // Medium resolution keeps payloads lightweight and fast
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
-      );
-
-      _cameraController = controller;
-      await controller.initialize();
-
-      if (mounted) {
-        setState(() {});
-        _startLiveStream(); // <--- START STREAMING HERE
-      }
-    } catch (e) {
-      debugPrint('Camera error: $e');
+    _apiService = widget.apiService ?? DetectionApiService();
+    _ttsService = widget.ttsService ?? TtsService();
+    _haptics = widget.hapticGuidanceService ?? HapticGuidanceService();
+    _now = widget.now ?? DateTime.now;
+    _sessionId = _haptics.startSession();
+    _ttsReady = _initializeTts();
+    WidgetsBinding.instance.addObserver(this);
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+    if (_foreground) {
+      final generation = _streamGeneration;
+      _queueCamera(() => _initializeCamera(generation));
+    } else {
+      _haptics.suspend();
     }
   }
 
-  void _startLiveStream() {
-    if (_cameraController == null || !_cameraController!.value.isInitialized)
+  Future<void> _initializeTts() async {
+    try {
+      await _ttsService.initialize();
+    } catch (e) {
+      debugPrint('TTS initialization error: $e');
+    }
+  }
+
+  bool _isCurrent(int generation) =>
+      mounted && !_stopped && _foreground && generation == _streamGeneration;
+
+  void _queueCamera(Future<void> Function() operation) {
+    // Serialize camera initialization/release across rapid lifecycle changes.
+    _cameraWork = _cameraWork.then((_) => operation()).catchError((Object e) {
+      debugPrint('Camera error: $e');
+      _haptics.invalidateGuidance(sessionId: _sessionId, capturedAt: _now());
+    });
+  }
+
+  Future<void> _initializeCamera(int generation) async {
+    if (!_isCurrent(generation)) return;
+    final cameras = await availableCameras();
+    if (!_isCurrent(generation) || cameras.isEmpty) return;
+    final camera = cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.back,
+      orElse: () => cameras.first,
+    );
+    final controller = CameraController(
+      camera,
+      ResolutionPreset.medium,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
+    );
+    try {
+      await controller.initialize();
+      if (!_isCurrent(generation)) {
+        await controller.dispose();
+        return;
+      }
+      _cameraController = controller;
+      controller.addListener(_onCameraChanged);
+      setState(() {});
+      await controller.startImageStream((frame) {
+        unawaited(_processFrame(frame, generation));
+      });
+    } catch (e) {
+      if (identical(_cameraController, controller)) {
+        _cameraController = null;
+        controller.removeListener(_onCameraChanged);
+        if (mounted) setState(() {});
+      }
+      await controller.dispose();
+      rethrow;
+    }
+  }
+
+  void _onCameraChanged() {
+    if (_cameraController?.value.hasError ?? false) {
+      _haptics.invalidateGuidance(sessionId: _sessionId, capturedAt: _now());
+    }
+  }
+
+  Future<void> _processFrame(CameraImage frame, int generation) async {
+    final capturedAt = _now();
+    if (!_isCurrent(generation) ||
+        _busyGeneration == generation ||
+        (_lastFrameTime != null &&
+            capturedAt.difference(_lastFrameTime!) <
+                const Duration(milliseconds: 300))) {
       return;
-
-    _cameraController!.startImageStream((CameraImage frame) async {
-      //debugPrint('Camera frame format: ${frame.format.group}');
-      //debugPrint('Number of planes: ${frame.planes.length}');
-
-      final now = DateTime.now();
-
-      // 300ms Throttle: Avoids overwhelming network/backend while keeping up with moving buses
-      if (_isServerBusy ||
-          now.difference(_lastFrameTime).inMilliseconds < 300) {
+    }
+    _busyGeneration = generation;
+    _lastFrameTime = capturedAt;
+    try {
+      final frameBytes = await _frameEncoder.encodeToJpeg(frame);
+      if (!_isCurrent(generation)) return;
+      final result = await _apiService.processFrameBytes(frameBytes);
+      if (!_isCurrent(generation)) return;
+      if (result == null) {
+        _haptics.invalidateGuidance(
+          sessionId: _sessionId,
+          capturedAt: capturedAt,
+        );
+        return;
+      }
+      // The watchdog uses capture time: a slow response is not a fresh frame.
+      if (!_haptics.updateGuidance(
+        sessionId: _sessionId,
+        busInGuidanceZone: result.busInGuidanceZone,
+        capturedAt: capturedAt,
+      )) {
         return;
       }
 
-      _isServerBusy = true;
-      _lastFrameTime = now;
-
-      try {
-        final Uint8List frameBytes = await _frameEncoder.encodeToJpeg(frame);
-        final result = await _apiService.processFrameBytes(frameBytes);
-
-        if (result != null && result.detected && mounted) {
-          setState(() {
-            lastDetectedRoute = result.routeNumber;
-            busMessage = 'حافلة رقم: ${result.routeNumber}';
-          });
-          await _ttsService.speakRouteNumber(result.routeNumber);
-        }
-      } catch (e) {
-        debugPrint('Stream frame error: $e');
-      } finally {
-        _isServerBusy = false;
+      if (result.detected && result.routeNumber.isNotEmpty) {
+        setState(() {
+          lastDetectedRoute = result.routeNumber;
+          busMessage = 'حافلة رقم: ${result.routeNumber}';
+        });
+        // Speech completion is handled separately so frames continue to update
+        // guidance while the existing announcement is playing.
+        if (!_isAnnouncing) unawaited(_announceRoute(result.routeNumber));
       }
-    });
+    } catch (e) {
+      if (_isCurrent(generation)) {
+        _haptics.invalidateGuidance(
+          sessionId: _sessionId,
+          capturedAt: capturedAt,
+        );
+      }
+      debugPrint('Stream frame error: $e');
+    } finally {
+      if (_busyGeneration == generation) _busyGeneration = null;
+    }
+  }
+
+  Future<void> _announceRoute(String route, {bool replay = false}) async {
+    if (_stopped || !_foreground) return;
+    final generation = ++_speechGeneration;
+    _isAnnouncing = true;
+    try {
+      await _ttsReady;
+      if (_stopped || !_foreground || generation != _speechGeneration) return;
+      final completed = replay
+          ? await _ttsService.replayLastRoute()
+          : await _ttsService.speakRouteNumber(route);
+      if (completed && !_stopped && generation == _speechGeneration) {
+        _haptics.completeRouteAnnouncement(_sessionId);
+      }
+    } catch (e) {
+      debugPrint('TTS error: $e');
+    } finally {
+      if (generation == _speechGeneration) _isAnnouncing = false;
+    }
+  }
+
+  Future<void> _releaseCamera() async {
+    final controller = _cameraController;
+    _cameraController = null;
+    if (controller == null) return;
+    // Remove the preview before notifying/disposal can schedule its rebuild.
+    if (mounted) setState(() {});
+    controller.removeListener(_onCameraChanged);
+    try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+    } finally {
+      await controller.dispose();
+    }
+  }
+
+  Future<void> _stopSpeech({bool permanently = false}) async {
+    try {
+      if (permanently) {
+        await _ttsService.dispose();
+      } else {
+        await _ttsService.stop();
+      }
+    } catch (e) {
+      debugPrint('TTS stop error: $e');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_stopped) return;
+    if (state != AppLifecycleState.resumed) {
+      if (!_foreground) return;
+      _foreground = false;
+      _streamGeneration++;
+      _speechGeneration++;
+      _isAnnouncing = false;
+      _haptics.suspend();
+      _apiService.cancelPending();
+      unawaited(_stopSpeech());
+      _queueCamera(_releaseCamera);
+    } else if (!_foreground) {
+      _foreground = true;
+      _streamGeneration++;
+      _lastFrameTime = null;
+      _haptics.resume();
+      final generation = _streamGeneration;
+      _queueCamera(() => _initializeCamera(generation));
+    }
+  }
+
+  void _stopDetection() {
+    if (_stopped) return;
+    _stopped = true;
+    _streamGeneration++;
+    _speechGeneration++;
+    _haptics.stopSession();
+    _apiService.dispose();
+    unawaited(_stopSpeech(permanently: true));
+    _queueCamera(_releaseCamera);
   }
 
   @override
   void dispose() {
-    final controller = _cameraController;
-
-    if (controller != null && controller.value.isStreamingImages) {
-      controller.stopImageStream();
-    }
-
-    controller?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _stopDetection();
+    unawaited(_haptics.dispose());
     super.dispose();
   }
 
@@ -120,137 +281,149 @@ class _DetectionScreenState extends State<DetectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      body: Center(
-        child: Container(
-          width: 320,
-          height: MediaQuery.of(context).size.height * 0.88,
-          constraints: const BoxConstraints(maxWidth: 380),
-          decoration: BoxDecoration(
-            color: const Color(0xFF303030),
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                blurRadius: 15,
-                spreadRadius: 2,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              // Bus route message
+      body: PopScope(
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) _stopDetection();
+        },
+        child: Center(
+          child: Container(
+            width: 320,
+            height: MediaQuery.of(context).size.height * 0.88,
+            constraints: const BoxConstraints(maxWidth: 380),
+            decoration: BoxDecoration(
+              color: const Color(0xFF303030),
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                // Bus route message
 
-              Container(
-                height: 90,
-                width: double.infinity,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                color: const Color(0xFF303030),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF252525),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    busMessage,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                Container(
+                  height: 90,
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  color: const Color(0xFF303030),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF252525),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      busMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              // Live phone camera feed
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.black,
+                // Live phone camera feed
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    color: Colors.black,
 
-                  child:
-                      _cameraController != null &&
-                          _cameraController!.value.isInitialized
-                      ? ClipRect(
-                          child: SizedBox.expand(
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: _cameraController!
-                                    .value
-                                    .previewSize!
-                                    .height,
+                    child:
+                        _cameraController != null &&
+                            _cameraController!.value.isInitialized
+                        ? ClipRect(
+                            child: SizedBox.expand(
+                              child: FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width: _cameraController!
+                                      .value
+                                      .previewSize!
+                                      .height,
 
-                                height:
-                                    _cameraController!.value.previewSize!.width,
+                                  height: _cameraController!
+                                      .value
+                                      .previewSize!
+                                      .width,
 
-                                child: CameraPreview(_cameraController!),
+                                  child: CameraPreview(_cameraController!),
+                                ),
                               ),
                             ),
+                          )
+                        : const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
                           ),
-                        )
-                      : const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
+                  ),
                 ),
-              ),
 
-              // Bottom buttons area
-              Container(
-                height: 90,
-                width: double.infinity,
-                color: const Color(0xFF303030),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Replay audio button - LEFT
-                    SizedBox(
-                      width: 55,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _ttsService.replayLastRoute();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          shape: const CircleBorder(),
-                          padding: EdgeInsets.zero,
-                          backgroundColor: const Color(0xFF252525),
-                          foregroundColor: Colors.white,
+                // Bottom buttons area
+                Container(
+                  height: 90,
+                  width: double.infinity,
+                  color: const Color(0xFF303030),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Replay audio button - LEFT
+                      SizedBox(
+                        width: 55,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            unawaited(
+                              _announceRoute(lastDetectedRoute, replay: true),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: const CircleBorder(),
+                            padding: EdgeInsets.zero,
+                            backgroundColor: const Color(0xFF252525),
+                            foregroundColor: Colors.white,
+                          ),
+
+                          child: const Icon(Icons.volume_up, size: 26),
                         ),
-
-                        child: const Icon(Icons.volume_up, size: 26),
                       ),
-                    ),
 
-                    // Stop detection button - RIGHT
-                    SizedBox(
-                      width: 55,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          shape: const CircleBorder(),
-                          padding: EdgeInsets.zero,
-                          backgroundColor: const Color(0xFF252525),
-                          foregroundColor: Colors.white,
+                      // Stop detection button - RIGHT
+                      SizedBox(
+                        width: 55,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _stopDetection();
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: const CircleBorder(),
+                            padding: EdgeInsets.zero,
+                            backgroundColor: const Color(0xFF252525),
+                            foregroundColor: Colors.white,
+                          ),
+
+                          child: const Icon(Icons.stop, size: 28),
                         ),
-
-                        child: const Icon(Icons.stop, size: 28),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
