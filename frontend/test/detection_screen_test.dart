@@ -132,14 +132,52 @@ class _Api extends DetectionApiService {
 class _Tts extends TtsService {
   final routes = <String>[];
   final utterances = <Completer<bool>>[];
+  final instructionUtterances = <Completer<bool>>[];
+  final events = <String>[];
+  Completer<void>? initializeGate;
+  Completer<bool>? startGate;
+  int initializations = 0;
+  int starts = 0;
+  int replays = 0;
   int stops = 0;
+  String? _lastRoute;
 
   @override
-  Future<void> initialize() async {}
+  Future<void> initialize() async {
+    initializations++;
+    await initializeGate?.future;
+  }
+
+  @override
+  Future<bool> speakStartMessage() async {
+    starts++;
+    events.add('start');
+    return await startGate?.future ?? true;
+  }
 
   @override
   Future<bool> speakRouteNumber(String routeNumber) {
     routes.add(routeNumber);
+    _lastRoute = routeNumber;
+    events.add('route $routeNumber');
+    final utterance = Completer<bool>();
+    utterances.add(utterance);
+    return utterance.future;
+  }
+
+  @override
+  Future<bool> speakInstruction() {
+    events.add('instructions');
+    final utterance = Completer<bool>();
+    instructionUtterances.add(utterance);
+    return utterance.future;
+  }
+
+  @override
+  Future<bool> replayLastRoute() {
+    if (_lastRoute == null) return Future.value(false);
+    replays++;
+    events.add('replay $_lastRoute');
     final utterance = Completer<bool>();
     utterances.add(utterance);
     return utterance.future;
@@ -257,6 +295,17 @@ class _Harness {
     for (final utterance in tts.utterances) {
       if (!utterance.isCompleted) utterance.complete(false);
     }
+    for (final utterance in tts.instructionUtterances) {
+      if (!utterance.isCompleted) utterance.complete(false);
+    }
+    final startGate = tts.startGate;
+    if (startGate != null && !startGate.isCompleted) {
+      startGate.complete(false);
+    }
+    final initializeGate = tts.initializeGate;
+    if (initializeGate != null && !initializeGate.isCompleted) {
+      initializeGate.complete();
+    }
     await flush();
     expect(tester.takeException(), isNull);
   }
@@ -271,6 +320,422 @@ void main() {
   });
 
   testWidgets(
+    'delayed TTS setup across background and resume still speaks startup once before the route',
+    (tester) async {
+      final harness = _Harness(tester);
+      harness.tts.initializeGate = Completer<void>();
+      harness.tts.startGate = Completer<bool>();
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      expect(harness.tts.initializations, 1);
+      expect(harness.tts.starts, 0);
+      expect(harness.tts.routes, isEmpty);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await harness.flush();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await harness.flush();
+      await harness.frame(_result(route: '43'));
+      expect(harness.camera.streamStarts, [1, 2]);
+      expect(harness.motor.running, isTrue);
+      expect(harness.tts.initializations, 1);
+      expect(harness.tts.starts, 0);
+
+      harness.tts.initializeGate!.complete();
+      await harness.flush();
+      expect(harness.tts.starts, 1);
+      expect(harness.tts.events, ['start']);
+      expect(harness.tts.routes, isEmpty);
+      harness.tts.startGate!.complete(true);
+      await harness.flush();
+      expect(harness.tts.events, ['start', 'route 43']);
+      expect(harness.tts.initializations, 1);
+      expect(harness.tts.starts, 1);
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'startup speech runs with the camera and only route completion latches guidance',
+    (tester) async {
+      final harness = _Harness(tester);
+      harness.tts.startGate = Completer<bool>();
+      await harness.open();
+      expect(harness.tts.starts, 1);
+      expect(harness.camera.streamStarts, [1]);
+
+      await harness.frame(_result(route: '42'));
+      expect(harness.tts.routes, isEmpty);
+      expect(harness.motor.running, isTrue);
+      expect(find.text('رقم وجهة الباص: 42'), findsOneWidget);
+      await harness.frame(_result(guidance: false, route: '42'));
+      expect(harness.motor.running, isFalse);
+      await harness.frame(_result(route: '42'));
+      expect(harness.motor.running, isTrue);
+
+      harness.tts.startGate!.complete(true);
+      await harness.flush();
+      expect(harness.tts.events, ['start', 'route 42']);
+      expect(harness.motor.running, isTrue);
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      expect(harness.motor.running, isFalse);
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'instructions start five seconds after route completion and play once',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      await tester.pump(const Duration(seconds: 6));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, isEmpty);
+
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(milliseconds: 4999));
+      expect(harness.tts.instructionUtterances, isEmpty);
+      await tester.pump(const Duration(milliseconds: 1));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+      harness.tts.instructionUtterances.single.complete(true);
+      await harness.flush();
+
+      await harness.frame(_result(route: '42'));
+      expect(harness.tts.routes, ['42']);
+      await harness.frame(_result(route: '43'));
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 6));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'a different route postpones pending instructions until its speech completes',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 4));
+      await harness.frame(_result(route: '43'));
+      expect(harness.tts.routes, ['42', '43']);
+
+      // Cross the original timer deadline while the newer route is speaking.
+      await tester.pump(const Duration(seconds: 2));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, isEmpty);
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(milliseconds: 4999));
+      expect(harness.tts.instructionUtterances, isEmpty);
+      await tester.pump(const Duration(milliseconds: 1));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets('replay is not interrupted by the instruction timer', (
+    tester,
+  ) async {
+    final harness = _Harness(tester);
+    await harness.open();
+    await harness.frame(_result(route: '42'));
+    harness.tts.utterances.single.complete(true);
+    await harness.flush();
+    await tester.pump(const Duration(seconds: 4));
+    await tester.tap(find.byIcon(Icons.volume_up));
+    await harness.flush();
+    expect(harness.tts.replays, 1);
+
+    await tester.pump(const Duration(seconds: 2));
+    await harness.flush();
+    expect(harness.tts.instructionUtterances, isEmpty);
+    harness.tts.utterances.last.complete(true);
+    await harness.flush();
+    await tester.pump(const Duration(milliseconds: 4999));
+    expect(harness.tts.instructionUtterances, isEmpty);
+    await tester.pump(const Duration(milliseconds: 1));
+    await harness.flush();
+    expect(harness.tts.instructionUtterances, hasLength(1));
+
+    await harness.cleanup();
+  });
+
+  testWidgets(
+    'replay supersedes current speech without accepting its late completion',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      await tester.tap(find.byIcon(Icons.volume_up));
+      await harness.flush();
+      expect(harness.tts.replays, 1);
+      expect(harness.tts.utterances, hasLength(2));
+
+      harness.tts.utterances.first.complete(true);
+      await harness.flush();
+      await harness.frame(_result(guidance: false));
+      await harness.frame(_result());
+      expect(harness.motor.running, isTrue);
+      expect(harness.tts.instructionUtterances, isEmpty);
+
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      expect(harness.motor.running, isFalse);
+      await tester.pump(const Duration(seconds: 5));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'replay uses the spoken route and preserves a newer detected route in the queue',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      await harness.frame(_result(route: '44'));
+      expect(find.text('رقم وجهة الباص: 44'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.volume_up));
+      await harness.flush();
+      expect(harness.tts.events, ['start', 'route 42', 'replay 42']);
+
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      expect(harness.tts.routes, ['42', '44']);
+      harness.tts.utterances.first.complete(true);
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, isEmpty);
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 5));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'a previously announced route is queued when it reappears during a different route',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      await harness.frame(_result(route: '43'));
+      await harness.frame(_result(route: '42'));
+      expect(harness.tts.routes, ['42', '43']);
+
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      expect(harness.tts.routes, ['42', '43', '42']);
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 5));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets('the newest recognized route is announced after current speech', (
+    tester,
+  ) async {
+    final harness = _Harness(tester);
+    await harness.open();
+    await harness.frame(_result(route: '42'));
+    await harness.frame(_result(route: '43'));
+    await harness.frame(_result(guidance: false, route: '44'));
+    expect(harness.tts.routes, ['42']);
+    expect(harness.motor.running, isFalse);
+    expect(find.text('رقم وجهة الباص: 44'), findsOneWidget);
+
+    harness.tts.utterances.first.complete(true);
+    await harness.flush();
+    expect(harness.tts.routes, ['42', '44']);
+    expect(harness.tts.instructionUtterances, isEmpty);
+    harness.tts.utterances.last.complete(true);
+    await harness.flush();
+    await tester.pump(const Duration(seconds: 5));
+    await harness.flush();
+    expect(harness.tts.instructionUtterances, hasLength(1));
+
+    await harness.cleanup();
+  });
+
+  testWidgets(
+    'a newly recognized route supersedes instructions and ignores late instruction completion',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 5));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.frame(_result(route: '43'));
+      expect(harness.tts.routes, ['42', '43']);
+      harness.tts.instructionUtterances.single.complete(true);
+      await harness.flush();
+      await harness.frame(_result(route: '44'));
+      expect(harness.tts.routes, ['42', '43']);
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      expect(harness.tts.routes, ['42', '43', '44']);
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 6));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'interrupted instructions do not replay on resume or disturb later route speech',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 5));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await harness.flush();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await harness.flush();
+      await harness.frame(_result(route: '43'));
+      harness.tts.instructionUtterances.single.complete(true);
+      await harness.flush();
+      await harness.frame(_result(route: '44'));
+      expect(harness.tts.routes, ['42', '43']);
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      expect(harness.tts.routes, ['42', '43', '44']);
+      harness.tts.utterances.last.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 6));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+      expect(harness.tts.starts, 1);
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'background pauses pending instructions and resumes the remaining delay',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 2));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await harness.flush();
+      await tester.pump(const Duration(seconds: 10));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, isEmpty);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await harness.flush();
+      expect(harness.tts.starts, 1);
+      await tester.pump(const Duration(milliseconds: 2999));
+      expect(harness.tts.instructionUtterances, isEmpty);
+      await tester.pump(const Duration(milliseconds: 1));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, hasLength(1));
+
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets(
+    'late background route completion cannot latch guidance or schedule instructions',
+    (tester) async {
+      final harness = _Harness(tester);
+      await harness.open();
+      await harness.frame(_result(route: '42'));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await harness.flush();
+      harness.tts.utterances.single.complete(true);
+      await harness.flush();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await harness.flush();
+      await harness.frame(_result());
+      expect(harness.motor.running, isTrue);
+      await tester.pump(const Duration(seconds: 6));
+      await harness.flush();
+      expect(harness.tts.instructionUtterances, isEmpty);
+
+      await harness.frame(_result(route: '42'));
+      expect(harness.tts.routes, ['42', '42']);
+      await harness.cleanup();
+    },
+  );
+
+  testWidgets('exit cancels pending instructions permanently', (tester) async {
+    final harness = _Harness(tester);
+    await harness.open();
+    await harness.frame(_result(route: '42'));
+    harness.tts.utterances.single.complete(true);
+    await harness.flush();
+    await tester.pump(const Duration(seconds: 4));
+    await tester.tap(find.byIcon(Icons.stop));
+    await harness.flush();
+    await tester.pump(const Duration(seconds: 6));
+    await harness.flush();
+    expect(harness.tts.instructionUtterances, isEmpty);
+    expect(find.text('home'), findsOneWidget);
+
+    await harness.cleanup();
+  });
+
+  testWidgets('late startup completion after exit cannot start route speech', (
+    tester,
+  ) async {
+    final harness = _Harness(tester);
+    harness.tts.startGate = Completer<bool>();
+    await harness.open();
+    await harness.frame(_result(route: '42'));
+    await tester.tap(find.byIcon(Icons.stop));
+    await harness.flush();
+    harness.tts.startGate!.complete(true);
+    await tester.pump(const Duration(seconds: 6));
+    await harness.flush();
+    expect(harness.tts.routes, isEmpty);
+    expect(harness.tts.instructionUtterances, isEmpty);
+    expect(harness.motor.running, isFalse);
+
+    await harness.cleanup();
+  });
+
+  testWidgets(
     'frames keep guidance current during speech and latch on completion',
     (tester) async {
       final harness = _Harness(tester);
@@ -279,7 +744,7 @@ void main() {
       await harness.frame(_result(route: '42'));
       expect(harness.tts.routes, ['42']);
       expect(harness.motor.running, isTrue);
-      expect(find.text('حافلة رقم: 42'), findsOneWidget);
+      expect(find.text('رقم وجهة الباص: 42'), findsOneWidget);
 
       // Speech remains pending, but zone loss and return still get fresh frames.
       await harness.frame(_result(guidance: false, route: '42'));
@@ -425,10 +890,11 @@ void main() {
         final starts = harness.motor.starts;
         pending.complete(_result(route: 'obsolete'));
         harness.tts.utterances.single.complete(true);
-        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pump(const Duration(seconds: 6));
         await harness.flush();
         expect(harness.motor.starts, starts);
         expect(harness.tts.routes, ['42']);
+        expect(harness.tts.instructionUtterances, isEmpty);
         expect(find.text('home'), findsOneWidget);
         expect(harness.camera.disposed, [1]);
 

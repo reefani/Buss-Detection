@@ -26,6 +26,8 @@ class TtsService {
     await _flutterTts.awaitSpeakCompletion(true);
   }
 
+  Future<bool> speakStartMessage() => _speak('بدا التحقق');
+
   /// Returns true only when this route utterance finishes naturally.
   Future<bool> speakRouteNumber(String routeNumber) async {
     if (_disposed ||
@@ -37,18 +39,22 @@ class TtsService {
     }
 
     _lastRouteNumber = routeNumber;
-    return _speakRoute(routeNumber);
+    return _speak('الباص رقم $routeNumber', routeNumber: routeNumber);
   }
+
+  Future<bool> speakInstruction() =>
+      _speak('لإعادة رقم الوجهة اضغط زر إعادة, و لإنهاء التحقق اضغط زر إنهاء');
 
   Future<bool> replayLastRoute() async {
     final routeNumber = _lastRouteNumber;
     if (_disposed || routeNumber == null) {
       return false;
     }
-    return _speakRoute(routeNumber);
+    return _speak('الباص رقم $routeNumber', routeNumber: routeNumber);
   }
 
-  Future<bool> _speakRoute(String routeNumber) async {
+  Future<bool> _speak(String text, {String? routeNumber}) async {
+    if (_disposed) return false;
     final generation = ++_speechGeneration;
     _finishSpeech(false);
     _activeRouteNumber = routeNumber;
@@ -66,7 +72,7 @@ class TtsService {
       // Keep this tied to its request: a stopped/replayed utterance may reply late.
       unawaited(
         _flutterTts
-            .speak('الباص رقم $routeNumber')
+            .speak(text)
             .then(
               (result) {
                 if (generation == _speechGeneration &&
@@ -95,7 +101,9 @@ class TtsService {
   void _finishSpeech(bool completed) {
     final completion = _speechCompletion;
     if (completion == null) return;
-    if (completed) _completedRouteNumber = _activeRouteNumber;
+    if (completed && _activeRouteNumber != null) {
+      _completedRouteNumber = _activeRouteNumber;
+    }
     _activeRouteNumber = null;
     _speechCompletion = null;
     completion.complete(completed);

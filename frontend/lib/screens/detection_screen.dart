@@ -44,6 +44,17 @@ class _DetectionScreenState extends State<DetectionScreen>
   bool _foreground = true;
   bool _stopped = false;
   bool _isAnnouncing = false;
+  bool _startupStarted = false;
+  bool _startupFinished = false;
+  bool _instructionsSpoken = false;
+  Timer? _instructionsTimer;
+  DateTime? _instructionsDeadline;
+  Duration? _pausedInstructionDelay;
+  String? _pendingRoute;
+  DateTime? _pendingRouteCapturedAt;
+  String? _activeRoute;
+  String? _lastSpokenRoute;
+  String? _lastAnnouncedRoute;
   DateTime? _lastFrameTime;
   String lastDetectedRoute = '';
 
@@ -62,6 +73,7 @@ class _DetectionScreenState extends State<DetectionScreen>
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
     if (_foreground) {
+      unawaited(_speakStartMessage());
       final generation = _streamGeneration;
       _queueCamera(() => _initializeCamera(generation));
     } else {
@@ -75,6 +87,100 @@ class _DetectionScreenState extends State<DetectionScreen>
     } catch (e) {
       debugPrint('TTS initialization error: $e');
     }
+  }
+
+  Future<void> _speakStartMessage() async {
+    if (_startupStarted) return;
+    final generation = _streamGeneration;
+    try {
+      await _ttsReady;
+      if (!_isCurrent(generation)) return;
+      _startupStarted = true;
+      await _ttsService.speakStartMessage();
+    } catch (e) {
+      debugPrint('TTS start message error: $e');
+    } finally {
+      if (_isCurrent(generation)) {
+        _startupFinished = true;
+        _drainPendingRoute();
+      }
+    }
+  }
+
+  void _cancelInstructions() {
+    _instructionsTimer?.cancel();
+    _instructionsTimer = null;
+    _instructionsDeadline = null;
+    _pausedInstructionDelay = null;
+  }
+
+  void _pauseInstructions() {
+    final deadline = _instructionsDeadline;
+    if (deadline != null) {
+      final remaining = deadline.difference(_now());
+      _pausedInstructionDelay = remaining > Duration.zero
+          ? remaining
+          : Duration.zero;
+    }
+    _instructionsTimer?.cancel();
+    _instructionsTimer = null;
+    _instructionsDeadline = null;
+  }
+
+  void _scheduleInstructions() {
+    if (_stopped || _instructionsSpoken) return;
+    _cancelInstructions();
+    _pausedInstructionDelay = const Duration(seconds: 5);
+    _resumeInstructions();
+  }
+
+  void _resumeInstructions() {
+    final delay = _pausedInstructionDelay;
+    if (delay == null ||
+        _stopped ||
+        !_foreground ||
+        _instructionsSpoken ||
+        _isAnnouncing) {
+      return;
+    }
+    _pausedInstructionDelay = null;
+    _instructionsDeadline = _now().add(delay);
+    final generation = _streamGeneration;
+    _instructionsTimer = Timer(delay, () {
+      _instructionsTimer = null;
+      _instructionsDeadline = null;
+      if (!_isCurrent(generation) || _instructionsSpoken) return;
+      // Match shahad's once-per-screen behavior: the prompt is consumed when
+      // it starts. A route or replay may interrupt it without repeating it.
+      _instructionsSpoken = true;
+      unawaited(_speakInstructions());
+    });
+  }
+
+  Future<void> _speakInstructions() async {
+    final generation = ++_speechGeneration;
+    try {
+      await _ttsReady;
+      if (_stopped || !_foreground || generation != _speechGeneration) return;
+      await _ttsService.speakInstruction();
+    } catch (e) {
+      debugPrint('TTS instruction error: $e');
+    }
+  }
+
+  void _drainPendingRoute() {
+    if (_stopped || !_foreground || !_startupFinished || _isAnnouncing) return;
+    final route = _pendingRoute;
+    final capturedAt = _pendingRouteCapturedAt;
+    _pendingRoute = null;
+    _pendingRouteCapturedAt = null;
+    if (route == null ||
+        route == _lastAnnouncedRoute ||
+        capturedAt == null ||
+        _now().difference(capturedAt) >= _haptics.staleAfter) {
+      return;
+    }
+    unawaited(_announceRoute(route));
   }
 
   bool _isCurrent(int generation) =>
@@ -164,13 +270,22 @@ class _DetectionScreenState extends State<DetectionScreen>
       }
 
       if (result.detected && result.routeNumber.isNotEmpty) {
-        setState(() {
-          lastDetectedRoute = result.routeNumber;
-          busMessage = 'حافلة رقم: ${result.routeNumber}';
-        });
-        // Speech completion is handled separately so frames continue to update
-        // guidance while the existing announcement is playing.
-        if (!_isAnnouncing) unawaited(_announceRoute(result.routeNumber));
+        final route = result.routeNumber;
+        if (route != lastDetectedRoute) {
+          setState(() {
+            lastDetectedRoute = route;
+            busMessage = 'رقم وجهة الباص: $route';
+          });
+        }
+        // Remember the latest route independently from the display. Frames
+        // remain responsive and a route seen during speech is not lost.
+        _pendingRoute =
+            route != _activeRoute &&
+                (_isAnnouncing || route != _lastAnnouncedRoute)
+            ? route
+            : null;
+        _pendingRouteCapturedAt = _pendingRoute == null ? null : capturedAt;
+        _drainPendingRoute();
       }
     } catch (e) {
       if (_isCurrent(generation)) {
@@ -189,19 +304,31 @@ class _DetectionScreenState extends State<DetectionScreen>
     if (_stopped || !_foreground) return;
     final generation = ++_speechGeneration;
     _isAnnouncing = true;
+    _activeRoute = route;
+    _pauseInstructions();
     try {
       await _ttsReady;
       if (_stopped || !_foreground || generation != _speechGeneration) return;
+      _lastSpokenRoute = route;
       final completed = replay
           ? await _ttsService.replayLastRoute()
           : await _ttsService.speakRouteNumber(route);
       if (completed && !_stopped && generation == _speechGeneration) {
+        _lastAnnouncedRoute = route;
         _haptics.completeRouteAnnouncement(_sessionId);
+        // Only route/replay completion starts shahad's five-second delay.
+        // Startup and instruction speech never complete vibration guidance.
+        _scheduleInstructions();
       }
     } catch (e) {
       debugPrint('TTS error: $e');
     } finally {
-      if (generation == _speechGeneration) _isAnnouncing = false;
+      if (generation == _speechGeneration) {
+        _isAnnouncing = false;
+        _activeRoute = null;
+        _drainPendingRoute();
+        _resumeInstructions();
+      }
     }
   }
 
@@ -242,6 +369,11 @@ class _DetectionScreenState extends State<DetectionScreen>
       _streamGeneration++;
       _speechGeneration++;
       _isAnnouncing = false;
+      _activeRoute = null;
+      _pendingRoute = null;
+      _pendingRouteCapturedAt = null;
+      if (_startupStarted) _startupFinished = true;
+      _pauseInstructions();
       _haptics.suspend();
       _apiService.cancelPending();
       unawaited(_stopSpeech());
@@ -251,6 +383,8 @@ class _DetectionScreenState extends State<DetectionScreen>
       _streamGeneration++;
       _lastFrameTime = null;
       _haptics.resume();
+      if (!_startupStarted) unawaited(_speakStartMessage());
+      _resumeInstructions();
       final generation = _streamGeneration;
       _queueCamera(() => _initializeCamera(generation));
     }
@@ -261,6 +395,9 @@ class _DetectionScreenState extends State<DetectionScreen>
     _stopped = true;
     _streamGeneration++;
     _speechGeneration++;
+    _pendingRoute = null;
+    _pendingRouteCapturedAt = null;
+    _cancelInstructions();
     _haptics.stopSession();
     _apiService.dispose();
     unawaited(_stopSpeech(permanently: true));
@@ -385,9 +522,10 @@ class _DetectionScreenState extends State<DetectionScreen>
                         height: 55,
                         child: ElevatedButton(
                           onPressed: () {
-                            unawaited(
-                              _announceRoute(lastDetectedRoute, replay: true),
-                            );
+                            final route = _lastSpokenRoute;
+                            if (_startupFinished && route != null) {
+                              unawaited(_announceRoute(route, replay: true));
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             shape: const CircleBorder(),

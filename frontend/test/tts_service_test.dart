@@ -96,6 +96,111 @@ void main() {
     },
   );
 
+  test('keeps the exact start message and awaits its completion', () async {
+    var finished = false;
+    final speech = service.speakStartMessage().then((result) {
+      finished = true;
+      return result;
+    });
+    await waitForUtterances(1);
+    expect(
+      calls.where((call) => call.method == 'speak').single.arguments,
+      'بدا التحقق',
+    );
+    expect(finished, isFalse);
+
+    utterances.single.complete(1);
+    expect(await speech, isTrue);
+    expect(await service.replayLastRoute(), isFalse);
+  });
+
+  test('keeps the exact instructions and awaits their completion', () async {
+    var finished = false;
+    final speech = service.speakInstruction().then((result) {
+      finished = true;
+      return result;
+    });
+    await waitForUtterances(1);
+    expect(
+      calls.where((call) => call.method == 'speak').single.arguments,
+      'لإعادة رقم الوجهة اضغط زر إعادة, و لإنهاء التحقق اضغط زر إنهاء',
+    );
+    expect(finished, isFalse);
+
+    utterances.single.complete(1);
+    expect(await speech, isTrue);
+    expect(await service.replayLastRoute(), isFalse);
+  });
+
+  test(
+    'start and instruction completion preserve route dedup and replay',
+    () async {
+      final route = service.speakRouteNumber('7');
+      await waitForUtterances(1);
+      utterances.last.complete(1);
+      expect(await route, isTrue);
+
+      final instructions = service.speakInstruction();
+      await waitForUtterances(2);
+      utterances.last.complete(1);
+      expect(await instructions, isTrue);
+
+      final start = service.speakStartMessage();
+      await waitForUtterances(3);
+      utterances.last.complete(1);
+      expect(await start, isTrue);
+      expect(await service.speakRouteNumber('7'), isFalse);
+
+      final replay = service.replayLastRoute();
+      await waitForUtterances(4);
+      utterances.last.complete(1);
+      expect(await replay, isTrue);
+      expect(
+        calls.where((call) => call.method == 'speak').last.arguments,
+        'الباص رقم 7',
+      );
+    },
+  );
+
+  test('instructions never mark an interrupted route as completed', () async {
+    final route = service.speakRouteNumber('7');
+    await waitForUtterances(1);
+    final instructions = service.speakInstruction();
+    expect(await route, isFalse);
+    await waitForUtterances(2);
+
+    var instructionsFinished = false;
+    unawaited(instructions.then((_) => instructionsFinished = true));
+    utterances.first.complete(1);
+    await platformEvent('speak.onCancel');
+    await Future<void>.delayed(Duration.zero);
+    expect(instructionsFinished, isFalse);
+
+    utterances.last.complete(1);
+    expect(await instructions, isTrue);
+    final retry = service.speakRouteNumber('7');
+    await waitForUtterances(3);
+    utterances.last.complete(1);
+    expect(await retry, isTrue);
+  });
+
+  test('a route invalidates a late start-message completion', () async {
+    final start = service.speakStartMessage();
+    await waitForUtterances(1);
+    final route = service.speakRouteNumber('7');
+    expect(await start, isFalse);
+    await waitForUtterances(2);
+
+    var routeFinished = false;
+    unawaited(route.then((_) => routeFinished = true));
+    utterances.first.complete(1);
+    await Future<void>.delayed(Duration.zero);
+    expect(routeFinished, isFalse);
+
+    utterances.last.complete(1);
+    expect(await route, isTrue);
+  });
+
   test('deduplicates routes while replay keeps the existing text', () async {
     expect(await service.speakRouteNumber(''), isFalse);
     expect(await service.replayLastRoute(), isFalse);
@@ -165,6 +270,8 @@ void main() {
     expect(await speech, isFalse);
     utterances.single.complete(1);
     expect(await service.speakRouteNumber('9'), isFalse);
+    expect(await service.speakStartMessage(), isFalse);
+    expect(await service.speakInstruction(), isFalse);
     expect(await service.replayLastRoute(), isFalse);
     expect(utterances, hasLength(1));
   });
@@ -209,21 +316,28 @@ void main() {
     expect(await replay, isFalse);
   });
 
-  test(
-    'stop during initialization prevents a queued utterance from starting',
-    () async {
-      final configuration = Completer<Object?>();
-      messenger.setMockMethodCallHandler(channel, (call) async {
-        calls.add(call);
-        if (call.method == 'setLanguage') return configuration.future;
-        return 1;
-      });
-      final speech = service.speakRouteNumber('7');
-      await Future<void>.delayed(Duration.zero);
-      await service.stop();
-      configuration.complete(1);
-      expect(await speech, isFalse);
-      expect(calls.where((call) => call.method == 'speak'), isEmpty);
-    },
-  );
+  final utteranceKinds = <String, Future<bool> Function(TtsService)>{
+    'route': (tts) => tts.speakRouteNumber('7'),
+    'start': (tts) => tts.speakStartMessage(),
+    'instructions': (tts) => tts.speakInstruction(),
+  };
+  for (final entry in utteranceKinds.entries) {
+    test(
+      'stop during initialization prevents queued ${entry.key} speech',
+      () async {
+        final configuration = Completer<Object?>();
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          if (call.method == 'setLanguage') return configuration.future;
+          return 1;
+        });
+        final speech = entry.value(service);
+        await Future<void>.delayed(Duration.zero);
+        await service.stop();
+        configuration.complete(1);
+        expect(await speech, isFalse);
+        expect(calls.where((call) => call.method == 'speak'), isEmpty);
+      },
+    );
+  }
 }
