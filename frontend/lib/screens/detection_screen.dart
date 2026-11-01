@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../services/detection_api_service.dart';
 import '../services/frame_encoder.dart';
 import '../services/tts_service.dart';
+import 'dart:async';
 
 class DetectionScreen extends StatefulWidget {
   const DetectionScreen({super.key});
@@ -21,6 +22,8 @@ class _DetectionScreenState extends State<DetectionScreen> {
   final FrameEncoder _frameEncoder = FrameEncoder();
 
   bool _isServerBusy = false;
+  Timer? _instructionsTimer;
+  bool _instructionsSpoken = false;
   DateTime _lastFrameTime = DateTime.now();
   String lastDetectedRoute = '';
 
@@ -29,9 +32,14 @@ class _DetectionScreenState extends State<DetectionScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeServices();
     _initializeCamera();
+  }
 
-    _ttsService.initialize();
+  Future<void> _initializeServices() async {
+   await _ttsService.initialize();
+   if(!mounted) return;
+   await _ttsService.speakStartMessage();
   }
 
   Future<void> _initializeCamera() async {
@@ -64,6 +72,19 @@ class _DetectionScreenState extends State<DetectionScreen> {
     }
   }
 
+  void _scheduleInstructions() {
+    if (_instructionsSpoken) return;
+    _instructionsTimer?.cancel(); // Cancel any existing timer
+    _instructionsTimer = Timer(const Duration(seconds: 5), () async {
+
+      if (!mounted || _instructionsSpoken) return;{
+        _instructionsSpoken = true;
+        await _ttsService.speakInstruction();
+      }
+    }
+    );
+  }
+
   void _startLiveStream() {
     if (_cameraController == null || !_cameraController!.value.isInitialized)
       return;
@@ -87,13 +108,20 @@ class _DetectionScreenState extends State<DetectionScreen> {
         final Uint8List frameBytes = await _frameEncoder.encodeToJpeg(frame);
         final result = await _apiService.processFrameBytes(frameBytes);
 
-        if (result != null && result.detected && mounted) {
-          setState(() {
-            lastDetectedRoute = result.routeNumber;
-            busMessage = 'حافلة رقم: ${result.routeNumber}';
-          });
-           await _ttsService.speakRouteNumber(result.routeNumber);
-        }
+       if (result != null && result.detected && mounted) {
+          final routeNumber = result.routeNumber;
+
+          if (routeNumber.isNotEmpty && routeNumber != lastDetectedRoute) {
+            setState(() {
+              lastDetectedRoute = routeNumber;
+              busMessage = 'رقم وجهة الباص: $routeNumber';
+            });
+            await _ttsService.speakRouteNumber(routeNumber);
+            if (!mounted) return;
+            _scheduleInstructions();
+           }
+        } // Schedule instructions after first successful detection
+
       } catch (e) {
         debugPrint('Stream frame error: $e');
       } finally {
@@ -104,6 +132,9 @@ class _DetectionScreenState extends State<DetectionScreen> {
 
   @override
   void dispose() {
+    _instructionsTimer?.cancel();
+    _ttsService.stop();
+
     final controller = _cameraController;
 
     if (controller != null && controller.value.isStreamingImages) {
