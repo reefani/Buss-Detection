@@ -169,19 +169,23 @@ class _DetectionScreenState extends State<DetectionScreen>
   }
 
   void _drainPendingRoute() {
-    if (_stopped || !_foreground || !_startupFinished || _isAnnouncing) return;
-    final route = _pendingRoute;
-    final capturedAt = _pendingRouteCapturedAt;
-    _pendingRoute = null;
-    _pendingRouteCapturedAt = null;
-    if (route == null ||
-        route == _lastAnnouncedRoute ||
-        capturedAt == null ||
-        _now().difference(capturedAt) >= _haptics.staleAfter) {
-      return;
-    }
-    unawaited(_announceRoute(route));
+  if (_stopped || !_foreground || !_startupFinished || _isAnnouncing) return;
+
+  final route = _pendingRoute;
+  final capturedAt = _pendingRouteCapturedAt;
+
+  _pendingRoute = null;
+  _pendingRouteCapturedAt = null;
+
+  if (route == null ||
+      route == _lastAnnouncedRoute ||
+      capturedAt == null ||
+      _now().difference(capturedAt) >= const Duration(seconds: 25)) {
+    return;
   }
+
+  unawaited(_announceRoute(route));
+}
 
   bool _isCurrent(int generation) =>
       mounted && !_stopped && _foreground && generation == _streamGeneration;
@@ -260,17 +264,32 @@ class _DetectionScreenState extends State<DetectionScreen>
         );
         return;
       }
-      // The watchdog uses capture time: a slow response is not a fresh frame.
-      if (!_haptics.updateGuidance(
-        sessionId: _sessionId,
-        busInGuidanceZone: result.busInGuidanceZone,
-        capturedAt: capturedAt,
-      )) {
-        return;
-      }
+      // Keep haptic guidance restricted to fresh frames.
+// A stale response must never trigger vibration.
+_haptics.updateGuidance(
+  sessionId: _sessionId,
+  busInGuidanceZone: result.busInGuidanceZone,
+  capturedAt: capturedAt,
+);
+
+// Route recognition has a separate validity window.
+if (_now().difference(capturedAt) >= const Duration(seconds: 25)) {
+  return;
+}
 
       if (result.detected && result.routeNumber.isNotEmpty) {
         final route = result.routeNumber;
+        if (route != _lastAnnouncedRoute &&
+    route != _activeRoute &&
+    !_isAnnouncing) {
+  _haptics.prepareForNewRoute();
+
+  _haptics.updateGuidance(
+    sessionId: _sessionId,
+    busInGuidanceZone: result.busInGuidanceZone,
+    capturedAt: capturedAt,
+  );
+}
         if (route != lastDetectedRoute) {
           setState(() {
             lastDetectedRoute = route;

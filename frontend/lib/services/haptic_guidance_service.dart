@@ -34,7 +34,7 @@ class HapticGuidanceService {
     GuidanceVibrationBackend? backend,
     this.vibrationDuration = const Duration(milliseconds: 220),
     this.pauseDuration = const Duration(milliseconds: 280),
-    this.staleAfter = const Duration(seconds: 3),
+    this.staleAfter = const Duration(seconds: 30),
     DateTime Function()? now,
   }) : assert(vibrationDuration.inMilliseconds > 0),
        assert(pauseDuration.inMilliseconds > 0),
