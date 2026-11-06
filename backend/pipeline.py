@@ -123,11 +123,11 @@ def process_frame(frame):
                         # Extract STRICTLY numerical digits (0-9)
                         digits_only = re.sub(r"[^\d]", "", text).strip()
 
-                        # Validate digit sequence length (1 to 4 digits long)
+                        # Validate digit sequence length (1 to 3 digits long)
                         if (
                             digits_only
                             and score > 0.35
-                            and 1 <= len(digits_only) <= 4
+                            and 1 <= len(digits_only) <= 3
                         ):
                             extracted_numbers.append(digits_only)
 

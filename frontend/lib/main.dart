@@ -4,7 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/detection_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // <--- Required before camera initialization
+  WidgetsFlutterBinding.ensureInitialized(); // Required before camera initialization
   runApp(const MyApp());
 }
 

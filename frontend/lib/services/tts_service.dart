@@ -23,7 +23,7 @@ class TtsService {
 
     _lastRouteNumber = routeNumber;
 
-    // Share the announcement guard; unavailable haptics must not interrupt TTS.
+    // Share the announcement guard. unavailable haptics must not interrupt TTS.
     try {
       await HapticFeedback.vibrate();
     } catch (_) {
