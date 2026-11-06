@@ -48,15 +48,9 @@ class HomeScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/detection');
                   },
                   style: ElevatedButton.styleFrom(
-                    shape: const CircleBorder(
-                      eccentricity: 1,
-                      side: BorderSide(color: Colors.black, width: 2.5),
-                    ),
-                    backgroundColor: const Color(0xFF00B001),
+                    shape: const CircleBorder(),
+                    backgroundColor: const Color(0XFF00B001),
                     foregroundColor: Colors.black,
-                    surfaceTintColor: Colors.transparent,
-                    elevation: 0,
-                    padding: EdgeInsets.zero,
                   ),
                   child: Text(
                     'ابدأ',

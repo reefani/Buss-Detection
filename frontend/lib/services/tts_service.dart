@@ -8,6 +8,12 @@ class TtsService {
   Future<void> initialize() async {
     await _flutterTts.setLanguage('ar');
     await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.awaitSpeakCompletion(true);
+  }
+
+  Future<void> speakStartMessage() async {
+    await _flutterTts.stop();
+    await _flutterTts.speak('بدا التحقق');
   }
 
   Future<void> speakRouteNumber(String routeNumber) async {
@@ -26,6 +32,10 @@ class TtsService {
 
     await _flutterTts.stop();
     await _flutterTts.speak('الباص رقم $routeNumber');
+  }
+  Future<void> speakInstruction() async {
+    await _flutterTts.stop();
+    await _flutterTts.speak ('لإعادة رقم الوجهة اضغط زر إعادة, و لإنهاء التحقق اضغط زر إنهاء');
   }
 
   Future<void> replayLastRoute() async {
