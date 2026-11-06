@@ -243,8 +243,8 @@ class _DetectionScreenState extends State<DetectionScreen> {
                   children: [
                     // Replay audio button - LEFT
                     SizedBox(
-                      width: 55,
-                      height: 55,
+                      width: 75,
+                      height: 75,
                       child: ElevatedButton(
                         onPressed: () {
                           _ttsService.replayLastRoute();
@@ -252,18 +252,25 @@ class _DetectionScreenState extends State<DetectionScreen> {
                         style: ElevatedButton.styleFrom(
                           shape: const CircleBorder(),
                           padding: EdgeInsets.zero,
-                          backgroundColor: const Color(0xFF252525),
-                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0XFF00B001),
+                          foregroundColor: Colors.black,
                         ),
 
-                        child: const Icon(Icons.volume_up, size: 26),
+                        child: const Text(
+                          'إعاده',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
 
                     // Stop detection button - RIGHT
                     SizedBox(
-                      width: 55,
-                      height: 55,
+                      width: 75,
+                      height: 75,
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
@@ -271,11 +278,18 @@ class _DetectionScreenState extends State<DetectionScreen> {
                         style: ElevatedButton.styleFrom(
                           shape: const CircleBorder(),
                           padding: EdgeInsets.zero,
-                          backgroundColor: const Color(0xFF252525),
-                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0XFF00B001),
+                          foregroundColor: Colors.black,
                         ),
 
-                        child: const Icon(Icons.stop, size: 28),
+                        child: const Text(
+                          'إنهاء',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
