@@ -11,6 +11,12 @@ from pathlib import Path
     
 # Initialize YOLO model
 BASE_DIR = Path(__file__).resolve().parent
+DEBUG_SAVE = False
+DEBUG_DIR = BASE_DIR / "debug_captures"
+if DEBUG_SAVE:
+    DEBUG_DIR.mkdir(exist_ok=True)
+
+capture_id = 0
 model = YOLO(BASE_DIR / "best.pt")
 
 # Initialize PaddleOCR
@@ -61,8 +67,10 @@ def is_inside(inner_box, outer_box, threshold=0.8):
 print("Panel is inside bus")
 
 def process_frame(frame):
+    global capture_id
     if frame is None or frame.size == 0:
         return None
+    
 
     yolo_result = model(frame, verbose=False)[0]
     bus_front = []
@@ -86,6 +94,10 @@ def process_frame(frame):
             if is_inside(panel_box, bus_box):
                 print("Panel is inside bus")
                 roi = extract_roi(frame, panel_box)
+                capture_id += 1
+                if DEBUG_SAVE:
+                    cv2.imwrite(str(DEBUG_DIR / f"frame_{capture_id:04d}.jpg"), frame)
+                    cv2.imwrite(str(DEBUG_DIR / f"roi_{capture_id:04d}.jpg"), roi)
                 print("ROI extracted")
                 break
         if roi is not None:
@@ -99,6 +111,8 @@ def process_frame(frame):
         results = ocr.predict(roi)
         extracted_numbers = []
         print("OCR executed")
+
+
 
         if results:
             for res in results:
@@ -120,7 +134,15 @@ def process_frame(frame):
         if extracted_numbers:
             route_number = extracted_numbers[0]  # Grab primary number match
             print(f"SUCCESS -> Recognized Route Number: {route_number}")
-
+                    
+            if DEBUG_SAVE:
+                result_file = DEBUG_DIR / f"result_{capture_id:04d}.txt"
+                result_file.write_text(
+                    f"Capture ID: {capture_id:04d}\n"
+                    f"OCR Text: {rec_texts}\n"
+                    f"Recognized Route: {route_number}\n",
+                    encoding="utf-8",
+                )
             return route_number
 
         return None

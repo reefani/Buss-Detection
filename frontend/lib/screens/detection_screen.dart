@@ -90,8 +90,8 @@ class _DetectionScreenState extends State<DetectionScreen> {
       return;
 
     _cameraController!.startImageStream((CameraImage frame) async {
-      debugPrint('Camera frame format: ${frame.format.group}');
-      debugPrint('Number of planes: ${frame.planes.length}');
+      //debugPrint('Camera frame format: ${frame.format.group}');
+      //debugPrint('Number of planes: ${frame.planes.length}');
 
       final now = DateTime.now();
 
