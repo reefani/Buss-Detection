@@ -1,0 +1,744 @@
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60541 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 38291 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60542 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 43675 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60543 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 31973 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 3
+[YOLO] class=1, confidence=0.425, bbox=[423.3276672363281, 221.19456481933594, 480.0, 302.7222900390625]
+[YOLO] class=0, confidence=0.329, bbox=[0.0, 0.0, 479.9742431640625, 516.344482421875]
+[YOLO] class=1, confidence=0.272, bbox=[421.43280029296875, 193.02325439453125, 480.0, 306.165771484375]
+bus panel detected
+bus front detected
+bus panel detected
+Panel is inside bus
+ROI extracted
+[OCR] Raw prediction results: [{'input_path': None, 'page_index': None, 'doc_preprocessor_res': {'output_img': array([[[115, ..., 126],
+        ...,
+        [ 60, ...,  59]],
+
+       ...,
+
+       [[ 24, ...,  17],
+        ...,
+        [ 33, ...,  27]]], shape=(83, 58, 3), dtype=uint8)}, 'dt_polys': [array([[ 0,  0],
+       ...,
+       [ 0, 72]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': False, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 64, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': [''], 'rec_scores': [0.0], 'rec_polys': [array([[ 0,  0],
+       ...,
+       [ 0, 72]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x11fb24b10>], 'textline_orientation_angles': [-1], 'rec_boxes': array([[ 0, ..., 72]], shape=(1, 4), dtype=int16)}]
+OCR executed
+[OCR] rec_texts=[''], rec_scores=[0.0]
+[OCR] raw='', score=0.0, digits='', accepted=False
+[OCR FAILED] No accepted route number
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60544 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 18147 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60545 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 18514 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60546 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 19457 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60547 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 37923 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60548 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 37693 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60549 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 42135 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60550 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 37298 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60551 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 40142 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60552 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 25782 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60553 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 29970 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60554 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 26164 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60555 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 19663 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60556 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 32152 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60557 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 55646 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60558 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 55433 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 2
+[YOLO] class=1, confidence=0.445, bbox=[13.786712646484375, 87.45745849609375, 288.3714904785156, 188.58172607421875]
+[YOLO] class=0, confidence=0.362, bbox=[0.0, 46.115203857421875, 345.7593994140625, 454.18115234375]
+bus panel detected
+bus front detected
+Panel is inside bus
+ROI extracted
+[OCR] Raw prediction results: [{'input_path': None, 'page_index': None, 'doc_preprocessor_res': {'output_img': array([[[ 52, ...,  43],
+        ...,
+        [ 53, ...,  43]],
+
+       ...,
+
+       [[ 59, ...,  42],
+        ...,
+        [212, ..., 181]]], shape=(105, 285, 3), dtype=uint8)}, 'dt_polys': [array([[118,  40],
+       ...,
+       [123,  71]], shape=(4, 2), dtype=int16), array([[18, 52],
+       ...,
+       [23, 93]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': False, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 64, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': ['éviloduill', '250'], 'rec_scores': [0.5283210277557373, 0.9999973177909851], 'rec_polys': [array([[118,  40],
+       ...,
+       [123,  71]], shape=(4, 2), dtype=int16), array([[18, 52],
+       ...,
+       [23, 93]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x11fb24b10>, <paddlex.utils.fonts.Font object at 0x11fb24b10>], 'textline_orientation_angles': [-1, -1], 'rec_boxes': array([[118, ...,  71],
+       [ 18, ...,  93]], shape=(2, 4), dtype=int16)}]
+OCR executed
+[OCR] rec_texts=['éviloduill', '250'], rec_scores=[0.5283210277557373, 0.9999973177909851]
+[OCR] raw='éviloduill', score=0.5283210277557373, digits='', accepted=False
+[OCR] raw='250', score=0.9999973177909851, digits='250', accepted=True
+[OCR] Accepted candidates: ['250']
+SUCCESS -> Recognized Route Number: 250
+[API] Pipeline returned route_number='250'
+[API] detected=True, route='250'
+INFO:     172.20.10.11:60559 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 40887 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60560 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 40651 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60561 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 39088 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60562 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 38600 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60563 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 57295 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60564 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 60824 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60565 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 60312 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60566 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 60817 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 2
+[YOLO] class=0, confidence=0.507, bbox=[115.65897369384766, 157.3583984375, 302.1278381347656, 349.8828125]
+[YOLO] class=1, confidence=0.322, bbox=[137.48956298828125, 167.60862731933594, 283.7490234375, 230.09754943847656]
+bus front detected
+bus panel detected
+Panel is inside bus
+ROI extracted
+[OCR] Raw prediction results: [{'input_path': None, 'page_index': None, 'doc_preprocessor_res': {'output_img': array([[[ 29, ...,  16],
+        ...,
+        [ 50, ...,  23]],
+
+       ...,
+
+       [[137, ...,  79],
+        ...,
+        [130, ...,  41]]], shape=(65, 150, 3), dtype=uint8)}, 'dt_polys': [array([[19, 29],
+       ...,
+       [25, 57]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': False, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 64, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': ['730 West Al-Uraija'], 'rec_scores': [0.9650910496711731], 'rec_polys': [array([[19, 29],
+       ...,
+       [25, 57]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x11fb24b10>], 'textline_orientation_angles': [-1], 'rec_boxes': array([[19, ..., 57]], shape=(1, 4), dtype=int16)}]
+OCR executed
+[OCR] rec_texts=['730 West Al-Uraija'], rec_scores=[0.9650910496711731]
+[OCR] raw='730 West Al-Uraija', score=0.9650910496711731, digits='730', accepted=True
+[OCR] Accepted candidates: ['730']
+SUCCESS -> Recognized Route Number: 730
+[API] Pipeline returned route_number='730'
+[API] detected=True, route='730'
+INFO:     172.20.10.11:60567 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 35122 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.809, bbox=[0.352783203125, 0.40789794921875, 480.0, 607.2850341796875]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60568 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 33432 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.256, bbox=[2.64715576171875, 44.9996337890625, 478.8946533203125, 592.562255859375]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60569 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 28674 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60570 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 35225 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60571 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 36749 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60572 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 38004 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60573 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 34887 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60574 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 30279 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60575 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 32070 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60576 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 53142 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60577 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 62790 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 2
+[YOLO] class=0, confidence=0.765, bbox=[59.34442138671875, 0.830657958984375, 415.22406005859375, 315.3860778808594]
+[YOLO] class=1, confidence=0.764, bbox=[133.08929443359375, 4.5326995849609375, 359.506103515625, 87.702880859375]
+bus front detected
+bus panel detected
+Panel is inside bus
+ROI extracted
+[OCR] Raw prediction results: [{'input_path': None, 'page_index': None, 'doc_preprocessor_res': {'output_img': array([[[ 90, ..., 252],
+        ...,
+        [189, ..., 248]],
+
+       ...,
+
+       [[111, ..., 104],
+        ...,
+        [102, ..., 174]]], shape=(85, 234, 3), dtype=uint8)}, 'dt_polys': [array([[ 0, 37],
+       ...,
+       [ 1, 85]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': False, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 64, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': ['70'], 'rec_scores': [0.6116654872894287], 'rec_polys': [array([[ 0, 37],
+       ...,
+       [ 1, 85]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x11fb24b10>], 'textline_orientation_angles': [-1], 'rec_boxes': array([[ 0, ..., 85]], shape=(1, 4), dtype=int16)}]
+OCR executed
+[OCR] rec_texts=['70'], rec_scores=[0.6116654872894287]
+[OCR] raw='70', score=0.6116654872894287, digits='70', accepted=True
+[OCR] Accepted candidates: ['70']
+SUCCESS -> Recognized Route Number: 70
+[API] Pipeline returned route_number='70'
+[API] detected=True, route='70'
+INFO:     172.20.10.11:60578 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 26113 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60579 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 39869 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60580 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 44923 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60581 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 45153 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60582 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 32408 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60583 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 39388 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.307, bbox=[26.54443359375, 0.0, 480.0, 383.32476806640625]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60584 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 42871 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60585 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 31032 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60586 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 35702 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60587 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 34292 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60588 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 36112 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60589 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 33214 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.517, bbox=[0.0, 0.0, 480.0, 494.07037353515625]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60590 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 45837 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60591 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 23543 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60592 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 28595 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60593 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 30207 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 2
+[YOLO] class=0, confidence=0.348, bbox=[0.0, 96.66845703125, 480.0, 640.0]
+[YOLO] class=1, confidence=0.299, bbox=[188.6881103515625, 547.5450439453125, 480.0, 640.0]
+bus front detected
+bus panel detected
+Panel is inside bus
+ROI extracted
+[OCR] Raw prediction results: [{'input_path': None, 'page_index': None, 'doc_preprocessor_res': {'output_img': array([[[112, ..., 107],
+        ...,
+        [108, ..., 105]],
+
+       ...,
+
+       [[251, ...,  58],
+        ...,
+        [ 34, ...,  22]]], shape=(94, 297, 3), dtype=uint8)}, 'dt_polys': [array([[214,  45],
+       ...,
+       [214,  75]], shape=(4, 2), dtype=int16), array([[39, 61],
+       ...,
+       [39, 86]], shape=(4, 2), dtype=int16)], 'model_settings': {'use_doc_preprocessor': False, 'use_textline_orientation': False}, 'text_det_params': {'limit_side_len': 64, 'limit_type': 'min', 'thresh': 0.3, 'max_side_limit': 4000, 'box_thresh': 0.6, 'unclip_ratio': 1.5}, 'text_type': 'general', 'text_rec_score_thresh': 0.0, 'return_word_box': False, 'rec_texts': ['6', 'M'], 'rec_scores': [0.43467146158218384, 0.6377284526824951], 'rec_polys': [array([[214,  45],
+       ...,
+       [214,  75]], shape=(4, 2), dtype=int16), array([[39, 61],
+       ...,
+       [39, 86]], shape=(4, 2), dtype=int16)], 'vis_fonts': [<paddlex.utils.fonts.Font object at 0x11fb24b10>, <paddlex.utils.fonts.Font object at 0x11fb24b10>], 'textline_orientation_angles': [-1, -1], 'rec_boxes': array([[214, ...,  75],
+       [ 39, ...,  86]], shape=(2, 4), dtype=int16)}]
+OCR executed
+[OCR] rec_texts=['6', 'M'], rec_scores=[0.43467146158218384, 0.6377284526824951]
+[OCR] raw='6', score=0.43467146158218384, digits='6', accepted=True
+[OCR] raw='M', score=0.6377284526824951, digits='', accepted=False
+[OCR] Accepted candidates: ['6']
+SUCCESS -> Recognized Route Number: 6
+[API] Pipeline returned route_number='6'
+[API] detected=True, route='6'
+INFO:     172.20.10.11:60594 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 45082 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60595 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 47575 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60596 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 48799 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60597 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 48394 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60598 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 47817 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60599 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 45601 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60600 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 46121 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60601 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 44725 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60602 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 46539 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60603 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 48844 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60604 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 50632 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60605 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 51538 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.401, bbox=[0.0, 0.0, 318.6661682128906, 371.03125]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60606 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 49188 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.364, bbox=[0.0, 0.0, 248.6881103515625, 360.99285888671875]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60607 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 49207 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.379, bbox=[1.234222412109375, 0.0, 265.0718688964844, 362.7521667480469]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60608 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 50500 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60609 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 57529 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.620, bbox=[201.84918212890625, 0.0, 405.70709228515625, 248.9732666015625]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60610 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 58904 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.285, bbox=[0.876312255859375, 0.232025146484375, 270.2085266113281, 354.3028564453125]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60611 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 60665 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.316, bbox=[232.21511840820312, 1.27972412109375, 480.0, 263.495361328125]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60612 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 62043 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60613 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 58556 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60614 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 52151 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60615 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 53781 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60616 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 47596 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60617 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 34895 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60618 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 33392 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.656, bbox=[48.04603576660156, 56.16888427734375, 478.0068359375, 638.062744140625]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60619 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 32182 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 1
+[YOLO] class=0, confidence=0.688, bbox=[0.0, 20.6473388671875, 480.0, 618.8673095703125]
+bus front detected
+[ROI FAILED] buses=1, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60620 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 9627 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60621 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 9713 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60622 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 19321 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60623 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 16146 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60624 - "POST /api/v1/detect HTTP/1.1" 200 OK
+[API] Received 9960 image bytes
+Received frame: 480x640
+[YOLO] Total detections: 0
+[ROI FAILED] buses=0, panels=0; no accepted panel inside a bus
+[API] Pipeline returned route_number=None
+[API] detected=False, no route recognized
+INFO:     172.20.10.11:60625 - "POST /api/v1/detect HTTP/1.1" 200 OK
