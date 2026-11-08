@@ -73,6 +73,9 @@ def process_frame(frame):
     
 
     yolo_result = model(frame, verbose=False)[0]
+    print(f"[YOLO] Total detections: {len(yolo_result.boxes)}", flush=True)
+    for debug_box in yolo_result.boxes:
+        print(f"[YOLO] class={int(debug_box.cls[0])}, confidence={float(debug_box.conf[0]):.3f}, bbox={debug_box.xyxy[0].tolist()}", flush=True)
     bus_front = []
     bus_numbers = []
 
@@ -104,11 +107,13 @@ def process_frame(frame):
             break
 
     if roi is None:
+        print(f"[ROI FAILED] buses={len(bus_front)}, panels={len(bus_numbers)}; no accepted panel inside a bus", flush=True)
         return None
 
     # Execute OCR
     try:
         results = ocr.predict(roi)
+        print(f"[OCR] Raw prediction results: {results}", flush=True)
         extracted_numbers = []
         print("OCR executed")
 
@@ -119,9 +124,11 @@ def process_frame(frame):
                 if isinstance(res, dict):
                     rec_texts = res.get("rec_texts", [])
                     rec_scores = res.get("rec_scores", [])
+                    print(f"[OCR] rec_texts={rec_texts}, rec_scores={rec_scores}", flush=True)
                     for text, score in zip(rec_texts, rec_scores):
                         # Extract STRICTLY numerical digits (0-9)
                         digits_only = re.sub(r"[^\d]", "", text).strip()
+                        print(f"[OCR] raw={text!r}, score={score}, digits={digits_only!r}, accepted={bool(digits_only and score > 0.35 and 1 <= len(digits_only) <= 3)}", flush=True)
 
                         # Validate digit sequence length (1 to 3 digits long)
                         if (
@@ -132,6 +139,7 @@ def process_frame(frame):
                             extracted_numbers.append(digits_only)
 
         if extracted_numbers:
+            print(f"[OCR] Accepted candidates: {extracted_numbers}", flush=True)
             route_number = extracted_numbers[0]  # Grab primary number match
             print(f"SUCCESS -> Recognized Route Number: {route_number}")
                     
@@ -145,6 +153,7 @@ def process_frame(frame):
                 )
             return route_number
 
+        print("[OCR FAILED] No accepted route number", flush=True)
         return None
 
     except Exception as e:

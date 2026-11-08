@@ -12,6 +12,7 @@ async def detect_bus(image: UploadFile = File(...)):
     try:
         # Read JPEG bytes received from Flutter
         image_bytes = await image.read()
+        print(f"[API] Received {len(image_bytes)} image bytes", flush=True)
 
         # Decode JPEG bytes into an OpenCV image
         np_array = np.frombuffer(image_bytes, np.uint8)
@@ -31,14 +32,17 @@ async def detect_bus(image: UploadFile = File(...)):
 
         # Run the real YOLO + OCR pipeline
         route_number = process_frame(frame)
+        print(f"[API] Pipeline returned route_number={route_number!r}", flush=True)
 
         if route_number is not None:
+            print(f"[API] detected=True, route={route_number!r}", flush=True)
             return {
                 "detected": True,
                 "route_number": route_number,
                 "confidence": 0.0
             }
 
+        print("[API] detected=False, no route recognized", flush=True)
         return {
             "detected": False,
             "route_number": "",
